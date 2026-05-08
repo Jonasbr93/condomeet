@@ -551,6 +551,18 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
   </div>
 </div>
 
+<!-- INITIAL BALANCE MODAL -->
+<div class="overlay" id="init-balance-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('init-balance-modal')">&#x2715;</button>
+    <h2>Saldo Inicial em Caixa</h2>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Valor que o condominio ja tinha em caixa antes de comecar a usar o CondoMeet.</p>
+    <div class="alert alert-error" id="init-bal-err"></div>
+    <div class="form-group"><label>Valor (EUR)</label><input type="number" id="init-bal-value" min="0" step="0.01" placeholder="0.00"></div>
+    <button class="btn btn-primary btn-full" onclick="saveInitialBalance()">Guardar</button>
+  </div>
+</div>
+
 <!-- CASHBOOK MODAL -->
 <div class="overlay" id="cashbook-modal">
   <div class="modal">
@@ -1577,14 +1589,17 @@ function summaryNavYear(dir){ summaryYear+=dir; renderSummary(); }
 async function renderSummary(){
   $i('summary-year-label').textContent=summaryYear;
 
-  // saldo global (todos os movimentos de caixa)
+  // saldo global (saldo inicial + movimentos de caixa)
+  var initialBal=Number(currentCondo&&currentCondo.initial_balance||0);
   var totalIn=cashbookEntries.filter(function(e){ return e.type==='income'; }).reduce(function(s,e){ return s+Number(e.amount||0); },0);
   var totalOut=cashbookEntries.filter(function(e){ return e.type==='expense'; }).reduce(function(s,e){ return s+Number(e.amount||0); },0);
-  var balance=totalIn-totalOut;
+  var balance=initialBal+totalIn-totalOut;
+  var editBalBtn=isAdmin()?'<button class="btn btn-xs btn-secondary" style="margin-top:6px" onclick="openInitialBalanceModal()">Editar</button>':'';
   $i('summary-stats').innerHTML=
+    '<div class="stat-card" style="border-left:3px solid var(--muted)"><div class="sv">EUR '+initialBal.toFixed(2)+'</div><div class="sl">Saldo inicial</div>'+editBalBtn+'</div>'+
     '<div class="stat-card" style="border-left:3px solid var(--success)"><div class="sv" style="color:var(--success)">EUR '+totalIn.toFixed(2)+'</div><div class="sl">Total entradas</div></div>'+
     '<div class="stat-card" style="border-left:3px solid var(--danger)"><div class="sv" style="color:var(--danger)">EUR '+totalOut.toFixed(2)+'</div><div class="sl">Total saidas</div></div>'+
-    '<div class="stat-card" style="border-left:3px solid '+(balance>=0?'var(--success)':'var(--danger)')+'"><div class="sv" style="color:'+(balance>=0?'var(--success)':'var(--danger)')+'">EUR '+balance.toFixed(2)+'</div><div class="sl">Saldo em caixa</div></div>';
+    '<div class="stat-card" style="border-left:3px solid '+(balance>=0?'var(--success)':'var(--danger)')+'"><div class="sv" style="color:'+(balance>=0?'var(--success)':'var(--danger)')+'">EUR '+balance.toFixed(2)+'</div><div class="sl">Saldo atual</div></div>';
 
   // lista de movimentos
   if(!cashbookEntries.length){
@@ -1708,6 +1723,23 @@ async function deleteCashbook(){
   closeModal('cashbook-modal');
   await loadCashbook(); renderSummary();
   showToast('Apagado.','info');
+}
+
+function openInitialBalanceModal(){
+  $i('init-bal-value').value=Number(currentCondo&&currentCondo.initial_balance||0).toFixed(2);
+  clearAlert('init-bal-err');
+  openModal('init-balance-modal');
+}
+
+async function saveInitialBalance(){
+  var val=parseFloat($i('init-bal-value').value);
+  if(isNaN(val)){ showAlert('init-bal-err','Valor invalido.'); return; }
+  var r=await sb.from('condominiums').update({initial_balance:val}).eq('id',CFG_CONDO_ID);
+  if(r.error){ showAlert('init-bal-err','Erro: '+r.error.message); return; }
+  currentCondo.initial_balance=val;
+  closeModal('init-balance-modal');
+  renderSummary();
+  showToast('Saldo inicial atualizado!','success');
 }
 
 // ─── UTILITIES ────────────────────────────
