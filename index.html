@@ -837,7 +837,7 @@ async function doRegister(){
     if(check.error==='fraction_not_found')
       showAlert('reg-err',`A fração "${fraction}" não existe neste condomínio. Verifique a letra da sua fração ou contacte o administrador.`);
     else if(check.error==='fraction_full')
-      showAlert('reg-err',`A fração "${fraction}" já atingiu o limite de 3 utilizadores registados. Contacte o administrador se precisar de acesso.`);
+      showAlert('reg-err',`A fração "${fraction}" já atingiu o limite de 2 utilizadores registados. Contacte o administrador se precisar de acesso.`);
     else
       showAlert('reg-err','Não foi possível registar. Contacte o administrador.');
     return;
