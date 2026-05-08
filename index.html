@@ -822,6 +822,26 @@ async function doRegister(){
   if (!email)     { showAlert('reg-err','Insira o seu email.'); return; }
   if (pw.length<6){ showAlert('reg-err','Password mínimo 6 caracteres.'); return; }
   if (pw!==pw2)   { showAlert('reg-err','As passwords não coincidem.'); return; }
+
+  // Validar fração: tem de existir e ter < 3 utilizadores (via função security definer)
+  showLoading('A verificar fração...');
+  const {data:check, error:checkErr}=await sb.rpc('check_fraction_registration',{p_condo_id:CFG_CONDO_ID,p_fraction:fraction});
+  if(checkErr||!check){
+    hideLoading();
+    showAlert('reg-err','Erro ao verificar fração. Tente novamente.');
+    return;
+  }
+  if(!check.ok){
+    hideLoading();
+    if(check.error==='fraction_not_found')
+      showAlert('reg-err',`A fração "${fraction}" não existe neste condomínio. Verifique a letra da sua fração ou contacte o administrador.`);
+    else if(check.error==='fraction_full')
+      showAlert('reg-err',`A fração "${fraction}" já atingiu o limite de 3 utilizadores registados. Contacte o administrador se precisar de acesso.`);
+    else
+      showAlert('reg-err','Não foi possível registar. Contacte o administrador.');
+    return;
+  }
+
   const role = (CFG_ADMIN_EMAIL && email===CFG_ADMIN_EMAIL) ? 'admin' : 'resident';
   const meta = { full_name:name, fraction, role, condominium_id:CFG_CONDO_ID };
   showLoading('A criar conta...');
@@ -1250,8 +1270,29 @@ function renderQuotas(){
         <div class="sl">${isAdmin()?'Sem dívidas':'Sem dívidas'}</div>
        </div>`;
 
+  // Para residente: total global em atraso (valor, sem identificar frações)
+  const globalDebtCard = !isAdmin() ? `
+    <div class="stat-card" style="border-left:3px solid #f59e0b">
+      <div class="sv" style="color:#b45309">€${debtAmt.toFixed(2)}</div>
+      <div class="sl">Total em dívida (condomínio)</div>
+    </div>` : '';
+
+  // Meses por pagar: frações × meses devidos sem pagamento pago (conta entradas)
+  const totalUnpaidCount = fracs.reduce((s,f)=>{
+    let c=0;
+    for(let m=1;m<=dueMths;m++){ const p=getPayment(f.id,m); if(!p||p.status!=='paid') c++; }
+    return s+c;
+  },0);
+  const unpaidCard = !isAdmin() ? `
+    <div class="stat-card">
+      <div class="sv" style="color:var(--muted)">${totalUnpaidCount}</div>
+      <div class="sl">Quota${totalUnpaidCount!==1?'s':''} por pagar (total)</div>
+    </div>` : '';
+
   $i('quota-stats').innerHTML=`
     ${debtCard}
+    ${globalDebtCard}
+    ${unpaidCard}
     <div class="stat-card"><div class="sv" style="color:var(--success)">${paid}</div><div class="sl">Pagas</div></div>
     <div class="stat-card"><div class="sv" style="color:var(--danger)">${overdue}</div><div class="sl">Em atraso</div></div>
     <div class="stat-card"><div class="sv">€${paidAmt.toFixed(2)}</div><div class="sl">Recebido</div></div>
