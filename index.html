@@ -1193,7 +1193,7 @@ function renderQuotas(){
   $i('quota-year-label').textContent=quotaYear;
 
   const myFrac=currentProfile.fraction?.toUpperCase();
-  const fracs = isAdmin() ? quotaFractions : quotaFractions.filter(f=>f.fraction.toUpperCase()===myFrac);
+  const fracs = quotaFractions;
 
   // Calcular dívida: meses até hoje sem pagamento marcado como pago
   const now = new Date();
@@ -1217,8 +1217,20 @@ function renderQuotas(){
     debtAmt+=fracDebt;
   });
 
+  // Para residente: calcular apenas a sua dívida
+  let myDebt=0;
+  if(!isAdmin()&&myFrac){
+    const myF=fracs.find(f=>f.fraction.toUpperCase()===myFrac);
+    if(myF){
+      for(let m=1;m<=dueMths;m++){
+        const pmt=getPayment(myF.id,m);
+        if(!pmt||pmt.status!=='paid') myDebt+=Number(myF.monthly_amount);
+      }
+    }
+  }
+
   // Stats cards
-  const allPmts = isAdmin() ? quotaPayments : quotaPayments.filter(p=>fracs.some(f=>f.id===p.fraction_id));
+  const allPmts = quotaPayments;
   const paid=allPmts.filter(p=>p.status==='paid').length;
   const overdue=allPmts.filter(p=>p.status==='overdue').length;
   const paidAmt=fracs.reduce((s,f)=>{
@@ -1227,10 +1239,11 @@ function renderQuotas(){
   },0);
   const totalAmt=fracs.reduce((s,f)=>s+12*Number(f.monthly_amount),0);
 
-  const debtCard = debtAmt>0
+  const displayDebt = isAdmin() ? debtAmt : myDebt;
+  const debtCard = displayDebt>0
     ? `<div class="stat-card" style="border-left:3px solid var(--danger)">
-        <div class="sv" style="color:var(--danger)">€${debtAmt.toFixed(2)}</div>
-        <div class="sl">${isAdmin()?`Em dívida (${debtFracs} fração${debtFracs>1?'ões':''})`:'Minha dívida'}</div>
+        <div class="sv" style="color:var(--danger)">€${displayDebt.toFixed(2)}</div>
+        <div class="sl">${isAdmin()?`Em dívida (${debtFracs} fração${debtFracs>1?'ões':''})`:'A minha dívida'}</div>
        </div>`
     : `<div class="stat-card" style="border-left:3px solid var(--success)">
         <div class="sv" style="color:var(--success)">€0</div>
