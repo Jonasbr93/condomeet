@@ -1329,8 +1329,8 @@ function renderQuotas(){
       const title=pmt?.note?`title="${esc(pmt.note)}"`:''
       let clickFn='';
       if(isAdmin()) clickFn=`onclick="openPaymentModal('${f.id}','${m}','${f.fraction}')"`;
-      else if(isMyFrac&&(st==='pending'||st==='overdue'||st==='payment_requested')) clickFn=`onclick="openResidentPaymentModal('${f.id}','${m}','${f.fraction}')"`;
-      const interactive=isAdmin()||(isMyFrac&&(st==='pending'||st==='overdue'||st==='payment_requested'));
+      else if(isMyFrac&&st!=='paid') clickFn=`onclick="openResidentPaymentModal('${f.id}','${m}','${f.fraction}')"`;
+      const interactive=isAdmin()||(isMyFrac&&st!=='paid');
       cells+=`<td><span class="qcell ${st}${interactive?'':' resident'}" ${title} ${clickFn}>${icon}</span></td>`;
     }
     const editBtn=isAdmin()?`<button class="btn btn-xs btn-secondary" style="margin-left:6px;padding:1px 5px" onclick="openFractionModal('${f.id}')">✏️</button>`:'';
@@ -1384,8 +1384,8 @@ function openResidentPaymentModal(fracId,month,fracName){
   clearAlert('payment-err');
   $i('pm-admin-view').style.display='none';
   $i('pm-resident-view').style.display='';
-  const st=pmt?.status||'pending';
-  const stLabels={pending:'Pendente',overdue:'Em atraso',payment_requested:'🕐 Pedido enviado'};
+  const st=pmt?.status||'empty';
+  const stLabels={pending:'Pendente',overdue:'Em atraso',payment_requested:'🕐 Pedido enviado',empty:'Por pagar',paid:'Paga'};
   $i('pm-resident-status').innerHTML=`Estado atual: <strong>${stLabels[st]||st}</strong>`;
   if(st==='payment_requested'){
     $i('pm-request-btn-wrap').style.display='none';
