@@ -333,8 +333,6 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
     <button class="nav-tab" id="nav-quotas" onclick="switchTab('quotas')">💶 Quotas <span class="tab-badge" id="quotas-badge" style="display:none">0</span></button>
     <button class="nav-tab" id="nav-issues" onclick="switchTab('issues')">🔧 Ocorrências <span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
     <button class="nav-tab" id="nav-cleaning" onclick="switchTab('cleaning')">🧹 Limpezas</button>
-    <button class="nav-tab" id="nav-utilities" onclick="switchTab('utilities')">💡 Água &amp; Luz</button>
-    <button class="nav-tab" id="nav-summary" onclick="switchTab('summary')">📊 Resumo</button>
   </nav>
 
   <div class="app-body">
@@ -404,22 +402,14 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
           <button class="btn btn-primary btn-sm" onclick="openNewIssueModal()">+ Nova Ocorrência</button>
         </div>
         <div id="issues-list"></div>
-
-        <!-- Issues cost summary -->
-        <div class="card" id="issues-cost-summary" style="margin-top:16px;display:none">
-          <div class="section-label" style="margin-bottom:10px">💰 Custos com Ocorrências</div>
-          <div id="issues-cost-list"></div>
-        </div>
       </div>
 
       <!-- ══ CLEANING TAB ══ -->
       <div id="tab-cleaning" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <button class="btn btn-secondary btn-sm" onclick="cleaningNavYear(-1)">&#8249;</button>
-            <span style="font-weight:700;font-size:1rem" id="cleaning-year-label"></span>
-            <button class="btn btn-secondary btn-sm" onclick="cleaningNavYear(1)">&#8250;</button>
-          </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <button class="btn btn-secondary btn-sm" onclick="cleaningNavYear(-1)">&#8249;</button>
+          <span style="font-weight:700;font-size:1rem" id="cleaning-year-label"></span>
+          <button class="btn btn-secondary btn-sm" onclick="cleaningNavYear(1)">&#8250;</button>
         </div>
         <div class="stats-grid" id="cleaning-stats"></div>
         <div class="card">
@@ -430,50 +420,6 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
               <tfoot><tr id="cleaning-tfoot"></tr></tfoot>
             </table>
           </div>
-        </div>
-      </div>
-
-      <!-- ══ UTILITIES TAB ══ -->
-      <div id="tab-utilities" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <button class="btn btn-secondary btn-sm" onclick="utilitiesNavYear(-1)">&#8249;</button>
-            <span style="font-weight:700;font-size:1rem" id="utilities-year-label"></span>
-            <button class="btn btn-secondary btn-sm" onclick="utilitiesNavYear(1)">&#8250;</button>
-          </div>
-        </div>
-        <div class="stats-grid" id="utilities-stats"></div>
-        <div class="card">
-          <div style="overflow-x:auto">
-            <table class="quota-table" id="utilities-table">
-              <thead><tr id="utilities-thead"></tr></thead>
-              <tbody id="utilities-tbody"></tbody>
-              <tfoot><tr id="utilities-tfoot"></tr></tfoot>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ SUMMARY TAB ══ -->
-      <div id="tab-summary" style="display:none">
-        <div class="stats-grid" id="summary-stats"></div>
-
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-            <div class="section-label" style="margin:0">💳 Movimentos de Caixa</div>
-            <button class="btn btn-primary btn-sm" id="btn-add-cashbook" onclick="openCashbookModal()" style="display:none">+ Movimento</button>
-          </div>
-          <div id="cashbook-list"></div>
-        </div>
-
-        <div class="card" style="margin-top:16px">
-          <div class="section-label" style="margin-bottom:14px">📈 Resumo Anual</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <button class="btn btn-secondary btn-sm" onclick="summaryNavYear(-1)">&#8249;</button>
-            <span style="font-weight:700;font-size:1rem" id="summary-year-label"></span>
-            <button class="btn btn-secondary btn-sm" onclick="summaryNavYear(1)">&#8250;</button>
-          </div>
-          <div id="summary-annual"></div>
         </div>
       </div>
 
@@ -562,65 +508,15 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
 <!-- CLEANING CELL MODAL -->
 <div class="overlay" id="cleaning-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('cleaning-modal')">✕</button>
-    <h2 id="cleaning-modal-title">🧹 Limpeza</h2>
+    <button class="modal-close" onclick="closeModal('cleaning-modal')">&#x2715;</button>
+    <h2 id="cleaning-modal-title">Limpeza</h2>
     <div class="alert alert-error" id="cleaning-err"></div>
     <div class="input-row">
-      <div class="form-group"><label>Nº de limpezas</label><input type="number" id="cl-count" min="0" placeholder="0"></div>
-      <div class="form-group"><label>Valor total pago (€)</label><input type="number" id="cl-amount" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label>N de limpezas</label><input type="number" id="cl-count" min="0" placeholder="0"></div>
+      <div class="form-group"><label>Valor total pago (EUR)</label><input type="number" id="cl-amount" min="0" step="0.01" placeholder="0.00"></div>
     </div>
     <div class="form-group"><label>Nota (opcional)</label><input type="text" id="cl-note" placeholder="Ex: Empresa XYZ"></div>
     <button class="btn btn-primary btn-full" onclick="saveCleaningCell()">Guardar</button>
-  </div>
-</div>
-
-<!-- UTILITY CELL MODAL -->
-<div class="overlay" id="utility-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('utility-modal')">✕</button>
-    <h2 id="utility-modal-title">💡 Água &amp; Luz</h2>
-    <div class="alert alert-error" id="utility-err"></div>
-    <div class="input-row">
-      <div class="form-group"><label>Água (€)</label><input type="number" id="ut-water" min="0" step="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label>Luz (€)</label><input type="number" id="ut-elec" min="0" step="0.01" placeholder="0.00"></div>
-    </div>
-    <div class="form-group"><label>Nota (opcional)</label><input type="text" id="ut-note" placeholder="Notas sobre as faturas"></div>
-    <button class="btn btn-primary btn-full" onclick="saveUtilityCell()">Guardar</button>
-  </div>
-</div>
-
-<!-- CASHBOOK MODAL -->
-<div class="overlay" id="cashbook-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('cashbook-modal')">✕</button>
-    <h2 id="cashbook-modal-title">💳 Novo Movimento</h2>
-    <div class="alert alert-error" id="cashbook-err"></div>
-    <div class="form-group"><label>Tipo</label>
-      <select id="cb-type">
-        <option value="income">📈 Entrada</option>
-        <option value="expense">📉 Saída</option>
-      </select>
-    </div>
-    <div class="form-group"><label>Descrição</label><input type="text" id="cb-desc" placeholder="Ex: Quotas Maio, Limpeza, Água..."></div>
-    <div class="input-row">
-      <div class="form-group"><label>Valor (€)</label><input type="number" id="cb-amount" min="0" step="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label>Data</label><input type="date" id="cb-date"></div>
-    </div>
-    <div class="form-group"><label>Categoria (opcional)</label>
-      <select id="cb-category">
-        <option value="">— Sem categoria —</option>
-        <option value="quotas">Quotas</option>
-        <option value="cleaning">Limpezas</option>
-        <option value="water">Água</option>
-        <option value="electricity">Eletricidade</option>
-        <option value="maintenance">Manutenção</option>
-        <option value="other">Outro</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-primary btn-full" onclick="saveCashbook()">Guardar</button>
-      <button class="btn btn-danger" id="cb-delete-btn" onclick="deleteCashbook()" style="display:none">🗑️</button>
-    </div>
   </div>
 </div>
 
@@ -668,10 +564,7 @@ let quotaFractions = [], quotaPayments = [];
 let quotaYear = new Date().getFullYear();
 let editingFractionId = null;
 let cleaningRecords = [], cleaningYear = new Date().getFullYear();
-let utilityRecords = [], utilitiesYear = new Date().getFullYear();
-let cashbookEntries = [], summaryYear = new Date().getFullYear();
-let editingCashbookId = null;
-let _clModalYear=0,_clModalMonth=0,_utModalYear=0,_utModalMonth=0;
+let _clModalYear=0, _clModalMonth=0;
 
 const TIME_SLOTS = (() => {
   const s = [];
@@ -714,16 +607,14 @@ function canAddDates(){ return isAdmin(); }
 let currentTab = 'meetings';
 function switchTab(tab){
   currentTab = tab;
-  ['meetings','quotas','issues','cleaning','utilities','summary'].forEach(t=>{
+  ['meetings','quotas','issues','cleaning'].forEach(t=>{
     $i(`nav-${t}`).classList.toggle('active', t===tab);
     $i(`tab-${t}`).style.display = t===tab ? '' : 'none';
   });
   closeSidePanel();
-  if (tab==='quotas')    renderQuotas();
-  if (tab==='issues')    renderIssues();
-  if (tab==='cleaning')  renderCleaning();
-  if (tab==='utilities') renderUtilities();
-  if (tab==='summary')   renderSummary();
+  if (tab==='quotas')   renderQuotas();
+  if (tab==='issues')   renderIssues();
+  if (tab==='cleaning') renderCleaning();
 }
 
 // ─── AUTH ─────────────────────────────────
@@ -830,17 +721,7 @@ async function loadCleaning(){
   cleaningRecords=data||[];
 }
 
-async function loadUtilities(){
-  const {data}=await sb.from('utility_records').select('*').eq('condominium_id',CFG_CONDO_ID).eq('year',utilitiesYear);
-  utilityRecords=data||[];
-}
-
-async function loadCashbook(){
-  const {data}=await sb.from('cashbook').select('*').eq('condominium_id',CFG_CONDO_ID).order('date',{ascending:false});
-  cashbookEntries=data||[];
-}
-
-
+// ─── PRESENCE ─────────────────────────────
 function startPresence(){
   presenceChannel=sb.channel(`presence:${CFG_CONDO_ID}`,{config:{presence:{key:currentUser.id}}});
   presenceChannel
@@ -865,7 +746,7 @@ function renderApp(){
   $i('hdr-condo').textContent=currentCondo?.name||'CondoMeet';
   $i('hdr-user').textContent=`${currentProfile.full_name} · ${currentProfile.fraction||'—'}`;
   $i('hdr-admin-btn').style.display=isAdmin()?'flex':'none';
-  if (isAdmin()){ $i('btn-add-fraction').style.display=''; $i('btn-add-cashbook').style.display=''; }
+  if (isAdmin()) $i('btn-add-fraction').style.display='';
   const now=new Date(); calViewYear=now.getFullYear(); calViewMonth=now.getMonth();
   renderMiniCal(); renderTopSlots();
   showScreen('app-screen');
@@ -1466,300 +1347,69 @@ async function deleteIssue(id){
   showToast('Ocorrência apagada.','info');
 }
 
-  await loadIssues(); renderIssues();
-  showToast('Ocorrência apagada.','info');
-}
-
 // ─── CLEANING ─────────────────────────────
-function getCleaningRecord(month){ return cleaningRecords.find(r=>r.month===month)||null; }
 
 function cleaningNavYear(dir){ cleaningYear+=dir; loadCleaning().then(()=>renderCleaning()); }
+function getCleaningRecord(month){ return cleaningRecords.find(r=>r.month===month)||null; }
 
 function renderCleaning(){
   $i('cleaning-year-label').textContent=cleaningYear;
-  const totalLimpezas=cleaningRecords.reduce((s,r)=>s+Number(r.count),0);
-  const totalAmt=cleaningRecords.reduce((s,r)=>s+Number(r.amount),0);
-  $i('cleaning-stats').innerHTML=`
-    <div class="stat-card"><div class="sv">${totalLimpezas}</div><div class="sl">Limpezas ${cleaningYear}</div></div>
-    <div class="stat-card"><div class="sv">€${totalAmt.toFixed(2)}</div><div class="sl">Total pago</div></div>
-    <div class="stat-card"><div class="sv">${totalLimpezas>0?(totalAmt/totalLimpezas).toFixed(2):'—'}</div><div class="sl">€ / limpeza</div></div>`;
-
-  let head=`<th style="text-align:left;min-width:80px">Mês</th><th>Limpezas</th><th>Valor pago</th><th>Nota</th>`;
-  if(isAdmin()) head+=`<th></th>`;
+  const totalN=cleaningRecords.reduce((s,r)=>s+Number(r.count||0),0);
+  const totalA=cleaningRecords.reduce((s,r)=>s+Number(r.amount||0),0);
+  $i('cleaning-stats').innerHTML=
+    '<div class="stat-card"><div class="sv">'+totalN+'</div><div class="sl">Limpezas '+cleaningYear+'</div></div>'+
+    '<div class="stat-card"><div class="sv">EUR '+totalA.toFixed(2)+'</div><div class="sl">Total pago</div></div>'+
+    '<div class="stat-card"><div class="sv">'+(totalN>0?(totalA/totalN).toFixed(2):'--')+'</div><div class="sl">EUR / limpeza</div></div>';
+  let head='<th style="text-align:left;min-width:80px">Mes</th><th>Limpezas</th><th>Valor pago</th><th>Nota</th>';
+  if(isAdmin()) head+='<th></th>';
   $i('cleaning-thead').innerHTML=head;
-
-  $i('cleaning-tbody').innerHTML=MONTHS_SHORT.map((m,i)=>{
-    const rec=getCleaningRecord(i+1);
-    const clickFn=isAdmin()?`onclick="openCleaningModal(${i+1})"`:'';
-    const editBtn=isAdmin()?`<td><button class="btn btn-xs btn-secondary" onclick="openCleaningModal(${i+1})">✏️</button></td>`:'';
-    return `<tr style="cursor:${isAdmin()?'pointer':'default'}" ${isAdmin()?`onclick="openCleaningModal(${i+1})"`:''}>
-      <td style="font-weight:600">${m}</td>
-      <td style="text-align:center">${rec?.count||'—'}</td>
-      <td style="text-align:right">${rec?.amount?'€'+Number(rec.amount).toFixed(2):'—'}</td>
-      <td style="color:var(--muted);font-size:.8rem">${esc(rec?.note||'')}</td>
-      ${isAdmin()?`<td></td>`:''}
-    </tr>`;
+  $i('cleaning-tbody').innerHTML=MONTHS_SHORT.map(function(m,i){
+    var rec=getCleaningRecord(i+1);
+    var editBtn=isAdmin()?'<td><button class="btn btn-xs btn-secondary" onclick="openCleaningModal('+(i+1)+')">editar</button></td>':'';
+    return '<tr>'
+      +'<td style="font-weight:600">'+m+'</td>'
+      +'<td style="text-align:center">'+(rec&&rec.count!=null?rec.count:'--')+'</td>'
+      +'<td style="text-align:right">'+(rec&&rec.amount?'EUR '+Number(rec.amount).toFixed(2):'--')+'</td>'
+      +'<td style="color:var(--muted);font-size:.8rem">'+esc(rec&&rec.note||'')+'</td>'
+      +editBtn
+      +'</tr>';
   }).join('');
-
-  $i('cleaning-tfoot').innerHTML=`<td style="text-align:left;font-weight:700">TOTAL</td>
-    <td style="text-align:center;font-weight:700">${totalLimpezas}</td>
-    <td style="text-align:right;font-weight:700">€${totalAmt.toFixed(2)}</td>
-    <td colspan="${isAdmin()?2:1}"></td>`;
+  $i('cleaning-tfoot').innerHTML=
+    '<td style="text-align:left;font-weight:700">TOTAL</td>'
+    +'<td style="text-align:center;font-weight:700">'+totalN+'</td>'
+    +'<td style="text-align:right;font-weight:700">EUR '+totalA.toFixed(2)+'</td>'
+    +'<td colspan="'+(isAdmin()?2:1)+'"></td>';
 }
 
 function openCleaningModal(month){
   if(!isAdmin()) return;
   _clModalYear=cleaningYear; _clModalMonth=month;
-  const rec=getCleaningRecord(month);
-  $i('cleaning-modal-title').textContent=`🧹 ${MONTHS_SHORT[month-1]} ${cleaningYear}`;
-  $i('cl-count').value=rec?.count||'';
-  $i('cl-amount').value=rec?.amount||'';
-  $i('cl-note').value=rec?.note||'';
+  var rec=getCleaningRecord(month);
+  $i('cleaning-modal-title').textContent=MONTHS_SHORT[month-1]+' '+cleaningYear;
+  $i('cl-count').value=rec&&rec.count!=null?rec.count:'';
+  $i('cl-amount').value=rec&&rec.amount!=null?rec.amount:'';
+  $i('cl-note').value=rec&&rec.note||'';
   clearAlert('cleaning-err');
   openModal('cleaning-modal');
 }
 
 async function saveCleaningCell(){
-  const count=parseInt($i('cl-count').value)||0;
-  const amount=parseFloat($i('cl-amount').value)||0;
-  const note=($i('cl-note').value||'').trim()||null;
-  const existing=getCleaningRecord(_clModalMonth);
-  let error;
+  var count=parseInt($i('cl-count').value)||0;
+  var amount=parseFloat($i('cl-amount').value)||0;
+  var note=($i('cl-note').value||'').trim()||null;
+  var existing=getCleaningRecord(_clModalMonth);
+  var err;
   if(existing){
-    ({error}=await sb.from('cleaning_records').update({count,amount,note}).eq('id',existing.id));
+    var r=await sb.from('cleaning_records').update({count:count,amount:amount,note:note}).eq('id',existing.id);
+    err=r.error;
   } else {
-    ({error}=await sb.from('cleaning_records').insert({condominium_id:CFG_CONDO_ID,year:_clModalYear,month:_clModalMonth,count,amount,note}));
+    var r=await sb.from('cleaning_records').insert({condominium_id:CFG_CONDO_ID,year:_clModalYear,month:_clModalMonth,count:count,amount:amount,note:note});
+    err=r.error;
   }
-  if(error){ showAlert('cleaning-err','Erro: '+error.message); return; }
+  if(err){ showAlert('cleaning-err','Erro: '+err.message); return; }
   closeModal('cleaning-modal');
   await loadCleaning(); renderCleaning();
   showToast('Guardado!','success');
-}
-
-// ─── UTILITIES ────────────────────────────
-function getUtilityRecord(month){ return utilityRecords.find(r=>r.month===month)||null; }
-
-function utilitiesNavYear(dir){ utilitiesYear+=dir; loadUtilities().then(()=>renderUtilities()); }
-
-function renderUtilities(){
-  $i('utilities-year-label').textContent=utilitiesYear;
-  const totalWater=utilityRecords.reduce((s,r)=>s+Number(r.water_amount),0);
-  const totalElec=utilityRecords.reduce((s,r)=>s+Number(r.electricity_amount),0);
-  $i('utilities-stats').innerHTML=`
-    <div class="stat-card"><div class="sv">€${totalWater.toFixed(2)}</div><div class="sl">Água ${utilitiesYear}</div></div>
-    <div class="stat-card"><div class="sv">€${totalElec.toFixed(2)}</div><div class="sl">Luz ${utilitiesYear}</div></div>
-    <div class="stat-card"><div class="sv">€${(totalWater+totalElec).toFixed(2)}</div><div class="sl">Total</div></div>`;
-
-  let head=`<th style="text-align:left;min-width:80px">Mês</th><th>💧 Água (€)</th><th>⚡ Luz (€)</th><th>Total</th><th>Nota</th>`;
-  $i('utilities-thead').innerHTML=head;
-
-  $i('utilities-tbody').innerHTML=MONTHS_SHORT.map((m,i)=>{
-    const rec=getUtilityRecord(i+1);
-    const total=rec?(Number(rec.water_amount)+Number(rec.electricity_amount)):0;
-    return `<tr style="cursor:${isAdmin()?'pointer':'default'}" ${isAdmin()?`onclick="openUtilityModal(${i+1})"`:''}>
-      <td style="font-weight:600">${m}</td>
-      <td style="text-align:right">${rec?.water_amount?'€'+Number(rec.water_amount).toFixed(2):'—'}</td>
-      <td style="text-align:right">${rec?.electricity_amount?'€'+Number(rec.electricity_amount).toFixed(2):'—'}</td>
-      <td style="text-align:right;font-weight:600">${total>0?'€'+total.toFixed(2):'—'}</td>
-      <td style="color:var(--muted);font-size:.8rem">${esc(rec?.note||'')}</td>
-    </tr>`;
-  }).join('');
-
-  $i('utilities-tfoot').innerHTML=`<td style="text-align:left;font-weight:700">TOTAL</td>
-    <td style="text-align:right;font-weight:700">€${totalWater.toFixed(2)}</td>
-    <td style="text-align:right;font-weight:700">€${totalElec.toFixed(2)}</td>
-    <td style="text-align:right;font-weight:700">€${(totalWater+totalElec).toFixed(2)}</td>
-    <td></td>`;
-}
-
-function openUtilityModal(month){
-  if(!isAdmin()) return;
-  _utModalYear=utilitiesYear; _utModalMonth=month;
-  const rec=getUtilityRecord(month);
-  $i('utility-modal-title').textContent=`💡 ${MONTHS_SHORT[month-1]} ${utilitiesYear}`;
-  $i('ut-water').value=rec?.water_amount||'';
-  $i('ut-elec').value=rec?.electricity_amount||'';
-  $i('ut-note').value=rec?.note||'';
-  clearAlert('utility-err');
-  openModal('utility-modal');
-}
-
-async function saveUtilityCell(){
-  const water_amount=parseFloat($i('ut-water').value)||0;
-  const electricity_amount=parseFloat($i('ut-elec').value)||0;
-  const note=($i('ut-note').value||'').trim()||null;
-  const existing=getUtilityRecord(_utModalMonth);
-  let error;
-  if(existing){
-    ({error}=await sb.from('utility_records').update({water_amount,electricity_amount,note}).eq('id',existing.id));
-  } else {
-    ({error}=await sb.from('utility_records').insert({condominium_id:CFG_CONDO_ID,year:_utModalYear,month:_utModalMonth,water_amount,electricity_amount,note}));
-  }
-  if(error){ showAlert('utility-err','Erro: '+error.message); return; }
-  closeModal('utility-modal');
-  await loadUtilities(); renderUtilities();
-  showToast('Guardado!','success');
-}
-
-// ─── SUMMARY ──────────────────────────────
-const CATEGORY_PT={quotas:'Quotas',cleaning:'Limpezas',water:'Água',electricity:'Eletricidade',maintenance:'Manutenção',other:'Outro','':`Outro`};
-
-function summaryNavYear(dir){ summaryYear+=dir; renderSummary(); }
-
-async function renderSummary(){
-  $i('summary-year-label').textContent=summaryYear;
-
-  // Cashbook
-  const totalIn=cashbookEntries.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
-  const totalOut=cashbookEntries.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
-  const balance=totalIn-totalOut;
-  $i('summary-stats').innerHTML=`
-    <div class="stat-card" style="border-left:3px solid var(--success)">
-      <div class="sv" style="color:var(--success)">€${totalIn.toFixed(2)}</div><div class="sl">Total entradas</div>
-    </div>
-    <div class="stat-card" style="border-left:3px solid var(--danger)">
-      <div class="sv" style="color:var(--danger)">€${totalOut.toFixed(2)}</div><div class="sl">Total saídas</div>
-    </div>
-    <div class="stat-card" style="border-left:3px solid ${balance>=0?'var(--success)':'var(--danger)'}">
-      <div class="sv" style="color:${balance>=0?'var(--success)':'var(--danger)'}">€${balance.toFixed(2)}</div><div class="sl">Saldo em caixa</div>
-    </div>`;
-
-  // Cashbook list
-  if(!cashbookEntries.length){
-    $i('cashbook-list').innerHTML='<div class="empty-state"><div class="ei">💳</div>Sem movimentos registados.</div>';
-  } else {
-    $i('cashbook-list').innerHTML=cashbookEntries.map(e=>`
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:1.2rem">${e.type==='income'?'📈':'📉'}</span>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:.88rem">${esc(e.description)}</div>
-          <div style="font-size:.76rem;color:var(--muted)">${fmtDate(e.date)}${e.category?' · '+esc(CATEGORY_PT[e.category]||e.category):''}</div>
-        </div>
-        <div style="font-weight:700;color:${e.type==='income'?'var(--success)':'var(--danger)'}">
-          ${e.type==='income'?'+':'−'}€${Number(e.amount).toFixed(2)}
-        </div>
-        ${isAdmin()?`<button class="btn btn-xs btn-secondary" onclick="openCashbookModal('${e.id}')">✏️</button>`:''}
-      </div>`).join('');
-  }
-
-  // Annual summary for selected year
-  const yr=summaryYear;
-  // Load cleaning + utilities for that year if needed
-  const [clRes, utRes, cbRes] = await Promise.all([
-    sb.from('cleaning_records').select('*').eq('condominium_id',CFG_CONDO_ID).eq('year',yr),
-    sb.from('utility_records').select('*').eq('condominium_id',CFG_CONDO_ID).eq('year',yr),
-    sb.from('cashbook').select('*').eq('condominium_id',CFG_CONDO_ID)
-  ]);
-  const clYr=clRes.data||[], utYr=utRes.data||[], cbYr=(cbRes.data||[]).filter(e=>e.date?.startsWith(yr.toString()));
-
-  const clTotal=clYr.reduce((s,r)=>s+Number(r.amount),0);
-  const wtTotal=utYr.reduce((s,r)=>s+Number(r.water_amount),0);
-  const elTotal=utYr.reduce((s,r)=>s+Number(r.electricity_amount),0);
-  const cbInYr=cbYr.filter(e=>e.type==='income').reduce((s,e)=>s+Number(e.amount),0);
-  const cbOutYr=cbYr.filter(e=>e.type==='expense').reduce((s,e)=>s+Number(e.amount),0);
-  // Issues costs for the year
-  const issuesCost=allIssues.filter(i=>i.cost&&i.created_at?.startsWith(yr.toString())).reduce((s,i)=>s+Number(i.cost),0);
-  // Quotas received for the year
-  const qpYr=quotaPayments.length ? quotaPayments : [];
-
-  const rows=[
-    {label:'💶 Quotas recebidas', amt: quotaFractions.reduce((s,f)=>{
-      const ct=(qpYr||[]).filter(p=>p.fraction_id===f.id&&p.status==='paid').length;
-      return s+ct*Number(f.monthly_amount);
-    },0), type:'income'},
-    {label:'💳 Outras entradas (caixa)', amt:cbInYr, type:'income'},
-    {label:'🧹 Limpezas', amt:clTotal, type:'expense'},
-    {label:'💧 Água', amt:wtTotal, type:'expense'},
-    {label:'⚡ Luz', amt:elTotal, type:'expense'},
-    {label:'🔧 Ocorrências', amt:issuesCost, type:'expense'},
-    {label:'💳 Outras saídas (caixa)', amt:cbOutYr, type:'expense'},
-  ];
-  const totalInYr=rows.filter(r=>r.type==='income').reduce((s,r)=>s+r.amt,0);
-  const totalOutYr=rows.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amt,0);
-
-  $i('summary-annual').innerHTML=`
-    <table class="data-table" style="margin-bottom:12px">
-      <thead><tr><th>Categoria</th><th style="text-align:right">Valor</th></tr></thead>
-      <tbody>
-        ${rows.map(r=>`<tr>
-          <td>${r.label}</td>
-          <td style="text-align:right;font-weight:600;color:${r.type==='income'?'var(--success)':'var(--danger)'}">
-            ${r.type==='income'?'+':'−'}€${r.amt.toFixed(2)}
-          </td>
-        </tr>`).join('')}
-      </tbody>
-      <tfoot>
-        <tr style="background:#f0fdf4">
-          <td style="font-weight:700">📈 Total entradas ${yr}</td>
-          <td style="text-align:right;font-weight:700;color:var(--success)">+€${totalInYr.toFixed(2)}</td>
-        </tr>
-        <tr style="background:#fff5f5">
-          <td style="font-weight:700">📉 Total saídas ${yr}</td>
-          <td style="text-align:right;font-weight:700;color:var(--danger)">−€${totalOutYr.toFixed(2)}</td>
-        </tr>
-        <tr style="background:${totalInYr-totalOutYr>=0?'#f0fdf4':'#fff5f5'}">
-          <td style="font-weight:700">💰 Resultado ${yr}</td>
-          <td style="text-align:right;font-weight:700;color:${totalInYr-totalOutYr>=0?'var(--success)':'var(--danger)'}">
-            €${(totalInYr-totalOutYr).toFixed(2)}
-          </td>
-        </tr>
-      </tfoot>
-    </table>`;
-}
-
-// Cashbook CRUD
-function openCashbookModal(id=null){
-  clearAlert('cashbook-err');
-  editingCashbookId=id;
-  if(id){
-    const e=cashbookEntries.find(x=>x.id===id); if(!e) return;
-    $i('cashbook-modal-title').textContent='✏️ Editar Movimento';
-    $i('cb-type').value=e.type;
-    $i('cb-desc').value=e.description;
-    $i('cb-amount').value=e.amount;
-    $i('cb-date').value=e.date;
-    $i('cb-category').value=e.category||'';
-    $i('cb-delete-btn').style.display='';
-  } else {
-    $i('cashbook-modal-title').textContent='💳 Novo Movimento';
-    $i('cb-type').value='income';
-    $i('cb-desc').value=''; $i('cb-amount').value='';
-    $i('cb-date').value=new Date().toISOString().split('T')[0];
-    $i('cb-category').value='';
-    $i('cb-delete-btn').style.display='none';
-  }
-  openModal('cashbook-modal');
-}
-
-async function saveCashbook(){
-  const type=$i('cb-type').value;
-  const description=$i('cb-desc').value.trim();
-  const amount=parseFloat($i('cb-amount').value);
-  const date=$i('cb-date').value;
-  const category=$i('cb-category').value||null;
-  clearAlert('cashbook-err');
-  if(!description){ showAlert('cashbook-err','Insira uma descrição.'); return; }
-  if(isNaN(amount)||amount<=0){ showAlert('cashbook-err','Valor inválido.'); return; }
-  if(!date){ showAlert('cashbook-err','Selecione uma data.'); return; }
-  let error;
-  if(editingCashbookId){
-    ({error}=await sb.from('cashbook').update({type,description,amount,date,category}).eq('id',editingCashbookId));
-  } else {
-    ({error}=await sb.from('cashbook').insert({condominium_id:CFG_CONDO_ID,type,description,amount,date,category,created_by:currentProfile.id}));
-  }
-  if(error){ showAlert('cashbook-err','Erro: '+error.message); return; }
-  closeModal('cashbook-modal');
-  await loadCashbook(); renderSummary();
-  showToast(editingCashbookId?'Atualizado!':'Movimento registado!','success');
-}
-
-async function deleteCashbook(){
-  if(!editingCashbookId||!confirm('Apagar este movimento?')) return;
-  const {error}=await sb.from('cashbook').delete().eq('id',editingCashbookId);
-  if(error){ showToast('Erro: '+error.message,'error'); return; }
-  closeModal('cashbook-modal');
-  await loadCashbook(); renderSummary();
-  showToast('Apagado.','info');
 }
 
 // ─── PROFILE MODAL ────────────────────────
@@ -1832,7 +1482,7 @@ async function bootSession(session){
     }
     const {data:condo}=await sb.from('condominiums').select('*').eq('id',CFG_CONDO_ID).single();
     currentCondo=condo||null;
-    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning(), loadUtilities(), loadCashbook()]);
+    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning()]);
     hideLoading();
     renderApp();
   } catch(e){
@@ -1852,8 +1502,7 @@ async function init(){
     if (event==='SIGNED_IN') await bootSession(session);
     if (event==='SIGNED_OUT'){
       currentUser=currentProfile=currentCondo=null;
-      calData={}; quotaFractions=[]; quotaPayments=[]; allIssues=[];
-      cleaningRecords=[]; utilityRecords=[]; cashbookEntries=[];
+      calData={}; quotaFractions=[]; quotaPayments=[]; allIssues=[]; cleaningRecords=[];
       selectedDate=null; selectedSlot=null; onlineUsers={};
       showScreen('login-screen');
     }
@@ -1861,7 +1510,7 @@ async function init(){
 
   setInterval(async ()=>{
     if (!currentUser||!$i('app-screen').classList.contains('active')) return;
-    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning(), loadUtilities(), loadCashbook()]);
+    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning()]);
     renderMiniCal(); renderTopSlots();
     if (selectedDate) renderAvailPanel(selectedDate);
     if (selectedDate&&selectedSlot) renderSidePanel(selectedDate,selectedSlot);
