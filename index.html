@@ -940,10 +940,10 @@ function renderQuotas(){
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth()+1; // 1-12
 
-  // Meses "devidos" = meses já passados (ou atual) no ano selecionado
+  // Dívida = apenas meses ANTERIORES ao mês atual (mês atual ainda está a decorrer)
   const dueMths = quotaYear < currentYear ? 12
-    : quotaYear === currentYear ? currentMonth
-    : 0; // ano futuro, nada em dívida ainda
+    : quotaYear === currentYear ? currentMonth - 1
+    : 0; // ano futuro, nada em dívida
 
   // Dívida global (admin) ou individual (residente)
   let debtAmt=0, debtFracs=0;
