@@ -563,7 +563,7 @@ function fmtDateTime(ts){
   const d=new Date(ts);
   return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${ph(d.getHours())}:${ph(d.getMinutes())}`;
 }
-function isAdmin(){ return currentProfile?.role==='admin'; }
+function isAdmin(){ return currentProfile?.role==='admin' || currentProfile?.role==='super_admin'; }
 function canAddDates(){ return isAdmin(); }
 
 // ─── TAB NAVIGATION ───────────────────────
@@ -955,7 +955,7 @@ function renderQuotas(){
     <div class="stat-card"><div class="sv" style="color:var(--muted)">€${totalAmt.toFixed(0)}</div><div class="sl">Total anual</div></div>`;
 
   if (!fracs.length){
-    $i('quota-table').parentElement.innerHTML=`<div class="empty-state"><div class="ei">💶</div>${isAdmin()?'Adicione frações com o botão + Fração.':'Sem frações configuradas. Contacte o administrador.'}</div>`;
+    $i('quota-table').closest('div').innerHTML=`<div class="empty-state"><div class="ei">💶</div>${isAdmin()?'Nenhuma fração configurada. Clique em <strong>+ Fração</strong> para começar.':'Sem frações configuradas. Contacte o administrador.'}</div>`;
     return;
   }
 
