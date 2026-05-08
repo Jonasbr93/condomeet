@@ -726,7 +726,9 @@ async function loadIssues(){
 }
 
 async function loadCleaning(){
-  const {data}=await sb.from('cleaning_dates').select('*').eq('condominium_id',CFG_CONDO_ID).eq('year',cleaningYear).order('date');
+  const y=cleaningYear;
+  const {data}=await sb.from('cleaning_dates').select('*').eq('condominium_id',CFG_CONDO_ID)
+    .gte('date',y+'-01-01').lte('date',y+'-12-31').order('date');
   cleaningRecords=data||[];
 }
 
@@ -1371,7 +1373,7 @@ function renderCleaning(){
 
   $i('cleaning-tbody').innerHTML=MONTHS_SHORT.map(function(m,i){
     var month=i+1;
-    var recs=cleaningRecords.filter(function(r){ return r.month===month; });
+    var recs=cleaningRecords.filter(function(r){ return r.date && parseInt(r.date.slice(5,7))===month; });
     var amt=recs.reduce(function(s,r){ return s+Number(r.amount||0); },0);
     var dates=recs.map(function(r){ return r.date?r.date.slice(5,10).split('-').reverse().join('/'):''; }).filter(Boolean).join(', ');
     var editBtn=isAdmin()?'<td><button class="btn btn-xs btn-secondary" onclick="openCleaningMonth('+(month)+')">Gerir</button></td>':'<td></td>';
@@ -1407,7 +1409,7 @@ function openCleaningMonth(month){
 }
 
 function renderCleaningEntries(month){
-  var recs=cleaningRecords.filter(function(r){ return r.month===month; });
+  var recs=cleaningRecords.filter(function(r){ return r.date && parseInt(r.date.slice(5,7))===month; });
   if(!recs.length){
     $i('cleaning-entries-list').innerHTML='<div style="color:var(--muted);font-size:.85rem;margin-bottom:8px">Sem limpezas registadas.</div>';
     return;
@@ -1431,8 +1433,7 @@ async function saveCleaningEntry(){
   var note=($i('cl-note').value||'').trim()||null;
   clearAlert('cleaning-err');
   if(!date){ showAlert('cleaning-err','Selecione uma data.'); return; }
-  var month=parseInt(date.slice(5,7));
-  var r=await sb.from('cleaning_dates').insert({condominium_id:CFG_CONDO_ID,date:date,month:month,year:cleaningYear,amount:amount,note:note,created_by:currentProfile.id});
+  var r=await sb.from('cleaning_dates').insert({condominium_id:CFG_CONDO_ID,date:date,amount:amount,note:note,created_by:currentProfile.id});
   if(r.error){ showAlert('cleaning-err','Erro: '+r.error.message); return; }
   $i('cl-date').value='';
   $i('cl-amount').value='';
