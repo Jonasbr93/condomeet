@@ -175,6 +175,7 @@ header .condo-name{font-size:.78rem;opacity:.7;flex:1;overflow:hidden;text-overf
 .qcell.paid{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
 .qcell.pending{background:#f7fafc;border-color:#cbd5e0;color:#a0aec0}
 .qcell.overdue{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.qcell.payment_requested{background:#dbeafe;border-color:#93c5fd;color:#1e40af;font-size:.75rem}
 .qcell.empty{background:#f7fafc;border-color:#e2e8f0;color:#cbd5e0}
 .qcell.resident{cursor:default}
 .quota-table .tfoot-paid{color:var(--success);font-size:.78rem}
@@ -561,15 +562,31 @@ header .condo-name{font-size:.78rem;opacity:.7;flex:1;overflow:hidden;text-overf
     <button class="modal-close" onclick="closeModal('payment-modal')">✕</button>
     <h2 id="payment-modal-title">💶 Pagamento</h2>
     <div class="alert alert-error" id="payment-err"></div>
-    <div class="form-group"><label>Estado</label>
-      <select id="pm-status">
-        <option value="paid">✓ Paga</option>
-        <option value="pending">— Pendente</option>
-        <option value="overdue">⚠ Em atraso</option>
-      </select>
+    <!-- Vista admin -->
+    <div id="pm-admin-view">
+      <div class="form-group"><label>Estado</label>
+        <select id="pm-status">
+          <option value="paid">✓ Paga</option>
+          <option value="pending">— Pendente</option>
+          <option value="overdue">⚠ Em atraso</option>
+          <option value="payment_requested">🕐 A confirmar</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Nota (opcional)</label><input type="text" id="pm-note" placeholder="Ex: Pago via MB Way"></div>
+      <div id="pm-confirm-btns" style="display:none;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary btn-full" style="background:var(--success);flex:1" onclick="confirmPaymentRequest()">✓ Confirmar pagamento</button>
+        <button class="btn btn-secondary btn-full" style="flex:1;color:var(--danger)" onclick="rejectPaymentRequest()">✕ Rejeitar</button>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="savePaymentCell()">Guardar</button>
     </div>
-    <div class="form-group"><label>Nota (opcional)</label><input type="text" id="pm-note" placeholder="Ex: Pago via MB Way"></div>
-    <button class="btn btn-primary btn-full" onclick="savePaymentCell()">Guardar</button>
+    <!-- Vista residente -->
+    <div id="pm-resident-view" style="display:none">
+      <div id="pm-resident-status" style="text-align:center;padding:12px 0;font-size:1.1rem"></div>
+      <div id="pm-request-btn-wrap">
+        <button class="btn btn-primary btn-full" onclick="requestPayment()">📤 Solicitar confirmação de pagamento</button>
+      </div>
+      <div id="pm-requested-msg" style="display:none;text-align:center;color:var(--muted);font-size:.9rem;padding:8px 0">Pedido enviado. Aguarda confirmação do administrador.</div>
+    </div>
   </div>
 </div>
 
@@ -872,6 +889,11 @@ async function loadQuotas(){
     const {data:pmts}=await sb.from('quota_payments').select('*').in('fraction_id',fracIds).eq('year',quotaYear);
     quotaPayments=pmts||[];
   } else { quotaPayments=[]; }
+  if(isAdmin()){
+    const pending=quotaPayments.filter(p=>p.status==='payment_requested').length;
+    $i('quotas-badge').textContent=pending;
+    $i('quotas-badge').style.display=pending>0?'':'none';
+  }
 }
 
 async function loadIssues(){
@@ -1244,14 +1266,18 @@ function renderQuotas(){
       const pmt=getPayment(f.id,m);
       if(!pmt||pmt.status!=='paid') fracDebt+=Number(f.monthly_amount);
     }
+    const isMyFrac=!isAdmin()&&f.fraction.toUpperCase()===(currentProfile.fraction||'').toUpperCase();
     let cells='';
     for(let m=1;m<=12;m++){
       const pmt=getPayment(f.id,m);
       const st=pmt?.status||'empty';
-      const icon=st==='paid'?'✓':st==='overdue'?'⚠':st==='pending'?'·':'';
+      const icon=st==='paid'?'✓':st==='overdue'?'⚠':st==='payment_requested'?'🕐':st==='pending'?'·':'';
       const title=pmt?.note?`title="${esc(pmt.note)}"`:''
-      const clickFn=isAdmin()?`onclick="openPaymentModal('${f.id}','${m}','${f.fraction}')"`:'';
-      cells+=`<td><span class="qcell ${st}${isAdmin()?'':' resident'}" ${title} ${clickFn}>${icon}</span></td>`;
+      let clickFn='';
+      if(isAdmin()) clickFn=`onclick="openPaymentModal('${f.id}','${m}','${f.fraction}')"`;
+      else if(isMyFrac&&(st==='pending'||st==='overdue'||st==='payment_requested')) clickFn=`onclick="openResidentPaymentModal('${f.id}','${m}','${f.fraction}')"`;
+      const interactive=isAdmin()||(isMyFrac&&(st==='pending'||st==='overdue'||st==='payment_requested'));
+      cells+=`<td><span class="qcell ${st}${interactive?'':' resident'}" ${title} ${clickFn}>${icon}</span></td>`;
     }
     const editBtn=isAdmin()?`<button class="btn btn-xs btn-secondary" style="margin-left:6px;padding:1px 5px" onclick="openFractionModal('${f.id}')">✏️</button>`:'';
     const debtCell=isAdmin()?`<td class="td-total" style="color:${fracDebt>0?'var(--danger)':'var(--success)'}">${fracDebt>0?'€'+fracDebt.toFixed(2):'✓'}</td>`:'';
@@ -1289,7 +1315,69 @@ function openPaymentModal(fracId,month,fracName){
   $i('pm-status').value=pmt?.status||'pending';
   $i('pm-note').value=pmt?.note||'';
   clearAlert('payment-err');
+  // Mostrar botões rápidos de confirmar/rejeitar quando está a confirmar
+  const isRequested=pmt?.status==='payment_requested';
+  $i('pm-confirm-btns').style.display=isRequested?'flex':'none';
+  $i('pm-admin-view').style.display='';
+  $i('pm-resident-view').style.display='none';
   openModal('payment-modal');
+}
+
+function openResidentPaymentModal(fracId,month,fracName){
+  _pmModalFracId=fracId; _pmModalMonth=Number(month);
+  const pmt=getPayment(fracId,Number(month));
+  $i('payment-modal-title').textContent=`💶 ${fracName} — ${MONTHS_SHORT[month-1]} ${quotaYear}`;
+  clearAlert('payment-err');
+  $i('pm-admin-view').style.display='none';
+  $i('pm-resident-view').style.display='';
+  const st=pmt?.status||'pending';
+  const stLabels={pending:'Pendente',overdue:'Em atraso',payment_requested:'🕐 Pedido enviado'};
+  $i('pm-resident-status').innerHTML=`Estado atual: <strong>${stLabels[st]||st}</strong>`;
+  if(st==='payment_requested'){
+    $i('pm-request-btn-wrap').style.display='none';
+    $i('pm-requested-msg').style.display='';
+  } else {
+    $i('pm-request-btn-wrap').style.display='';
+    $i('pm-requested-msg').style.display='none';
+  }
+  openModal('payment-modal');
+}
+
+async function requestPayment(){
+  clearAlert('payment-err');
+  const existing=getPayment(_pmModalFracId,_pmModalMonth);
+  let error;
+  if(existing){
+    ({error}=await sb.from('quota_payments').update({status:'payment_requested',requested_at:new Date().toISOString()}).eq('id',existing.id));
+  } else {
+    ({error}=await sb.from('quota_payments').insert({fraction_id:_pmModalFracId,year:quotaYear,month:_pmModalMonth,status:'payment_requested',requested_at:new Date().toISOString()}));
+  }
+  if(error){ showAlert('payment-err','Erro: '+error.message); return; }
+  closeModal('payment-modal');
+  await loadQuotas(); renderQuotas();
+  showToast('Pedido enviado ao administrador!','success');
+}
+
+async function confirmPaymentRequest(){
+  clearAlert('payment-err');
+  const existing=getPayment(_pmModalFracId,_pmModalMonth);
+  if(!existing) return;
+  const {error}=await sb.from('quota_payments').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',existing.id);
+  if(error){ showAlert('payment-err','Erro: '+error.message); return; }
+  closeModal('payment-modal');
+  await loadQuotas(); renderQuotas();
+  showToast('Pagamento confirmado!','success');
+}
+
+async function rejectPaymentRequest(){
+  clearAlert('payment-err');
+  const existing=getPayment(_pmModalFracId,_pmModalMonth);
+  if(!existing) return;
+  const {error}=await sb.from('quota_payments').update({status:'pending',requested_at:null}).eq('id',existing.id);
+  if(error){ showAlert('payment-err','Erro: '+error.message); return; }
+  closeModal('payment-modal');
+  await loadQuotas(); renderQuotas();
+  showToast('Pedido rejeitado.','info');
 }
 
 async function savePaymentCell(){
