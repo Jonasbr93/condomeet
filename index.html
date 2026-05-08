@@ -1293,6 +1293,7 @@ function openPaymentModal(fracId,month,fracName){
 }
 
 async function savePaymentCell(){
+  if(!isAdmin()) return;
   const status=$i('pm-status').value;
   const note=($i('pm-note').value||'').trim()||null;
   clearAlert('payment-err');
@@ -1330,6 +1331,7 @@ function openFractionModal(id=null){
 }
 
 async function saveFraction(){
+  if(!isAdmin()) return;
   const fraction=$i('fr-fraction').value.trim().toUpperCase();
   const monthly_amount=parseFloat($i('fr-amount').value);
   const description=$i('fr-desc').value.trim()||null;
@@ -1612,6 +1614,7 @@ function renderCleaningEntries(month){
 }
 
 async function saveCleaningEntry(){
+  if(!isAdmin()) return;
   var date=$i('cl-date').value;
   var amount=parseFloat($i('cl-amount').value)||0;
   var note=($i('cl-note').value||'').trim()||null;
@@ -1753,6 +1756,7 @@ function openCashbookModal(id){
 }
 
 async function saveCashbook(){
+  if(!isAdmin()) return;
   var type=$i('cb-type').value;
   var description=$i('cb-desc').value.trim();
   var amount=parseFloat($i('cb-amount').value);
@@ -1790,6 +1794,7 @@ function openInitialBalanceModal(){
 }
 
 async function saveInitialBalance(){
+  if(!isAdmin()) return;
   var val=parseFloat($i('init-bal-value').value);
   if(isNaN(val)){ showAlert('init-bal-err','Valor invalido.'); return; }
   var r=await sb.from('condominiums').update({initial_balance:val}).eq('id',CFG_CONDO_ID);
@@ -1853,6 +1858,7 @@ function openUtilityModal(month){
 }
 
 async function saveUtilityBill(){
+  if(!isAdmin()) return;
   var water_amount=parseFloat($i('ut-water').value)||0;
   var electricity_amount=parseFloat($i('ut-elec').value)||0;
   var note=($i('ut-note').value||'').trim()||null;
