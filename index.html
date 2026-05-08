@@ -1098,22 +1098,23 @@ function renderIssues(){
     $i('issues-list').innerHTML=`<div class="empty-state"><div class="ei">✅</div>${issueFilter==='open'?'Sem ocorrências abertas.':'Sem resultados.'}</div>`;
     return;
   }
+  const myId=currentProfile.id;
   $i('issues-list').innerHTML=list.map(issue=>{
     const prof=issue.profiles||{};
     const name=prof.full_name||'?';
     const stBadge=badge(issue.status,ISTATUS_PT[issue.status]||issue.status);
     const costTag=issue.cost?`<span style="font-size:.75rem;background:#fef3c7;color:#92400e;border-radius:20px;padding:1px 8px;font-weight:700">💰 €${Number(issue.cost).toFixed(2)}</span>`:'';
-    // Quick status buttons for admin (only show transitions that make sense)
-    const statusActions=isAdmin()?`<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+    const canChange=isAdmin()||issue.created_by===myId;
+    const statusActions=canChange?`<div style="display:flex;gap:5px;margin-top:10px;flex-wrap:wrap">
       ${issue.status!=='in_progress'?`<button class="btn btn-xs btn-warn" onclick="event.stopPropagation();setIssueStatus('${issue.id}','in_progress')">▶ Em curso</button>`:''}
       ${issue.status!=='resolved'?`<button class="btn btn-xs btn-primary" onclick="event.stopPropagation();setIssueStatus('${issue.id}','resolved')">✓ Resolver</button>`:''}
       ${issue.status!=='open'?`<button class="btn btn-xs btn-secondary" onclick="event.stopPropagation();setIssueStatus('${issue.id}','open')">↩ Reabrir</button>`:''}
     </div>`:'';
     return `<div class="issue-card" onclick="openIssueDetail('${issue.id}')">
       <div class="ic-top">
-        <div>
+        <div style="flex:1">
           <div class="ic-title">${esc(issue.title)}</div>
-          <div class="ic-meta" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">Por ${esc(name)} · ${fmtDateTime(issue.created_at)} ${stBadge} ${costTag}</div>
+          <div class="ic-meta" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">Por ${esc(name)} · ${fmtDateTime(issue.created_at)} ${stBadge} ${costTag}</div>
         </div>
       </div>
       ${issue.description?`<div class="ic-desc">${esc(issue.description)}</div>`:''}
@@ -1150,7 +1151,7 @@ async function openIssueDetail(id){
   const stBadge=badge(issue.status,ISTATUS_PT[issue.status]||issue.status);
   const canEdit=isAdmin()||issue.created_by===myId;
 
-  const statusBtns=isAdmin()?`
+  const statusBtns=canEdit?`
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
       ${issue.status!=='open'?`<button class="btn btn-xs btn-secondary" onclick="setIssueStatus('${id}','open')">↩ Reabrir</button>`:''}
       ${issue.status!=='in_progress'?`<button class="btn btn-xs btn-warn" onclick="setIssueStatus('${id}','in_progress')">▶ Em curso</button>`:''}
