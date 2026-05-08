@@ -333,6 +333,7 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
     <button class="nav-tab" id="nav-quotas" onclick="switchTab('quotas')">💶 Quotas <span class="tab-badge" id="quotas-badge" style="display:none">0</span></button>
     <button class="nav-tab" id="nav-issues" onclick="switchTab('issues')">🔧 Ocorrências <span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
     <button class="nav-tab" id="nav-cleaning" onclick="switchTab('cleaning')">🧹 Limpezas</button>
+    <button class="nav-tab" id="nav-utilities" onclick="switchTab('utilities')">💡 Agua &amp; Luz</button>
   </nav>
 
   <div class="app-body">
@@ -423,6 +424,25 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
         </div>
       </div>
 
+      <!-- ══ UTILITIES TAB ══ -->
+      <div id="tab-utilities" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <button class="btn btn-secondary btn-sm" onclick="utilitiesNavYear(-1)">&#8249;</button>
+          <span style="font-weight:700;font-size:1rem" id="utilities-year-label"></span>
+          <button class="btn btn-secondary btn-sm" onclick="utilitiesNavYear(1)">&#8250;</button>
+        </div>
+        <div class="stats-grid" id="utilities-stats"></div>
+        <div class="card">
+          <div style="overflow-x:auto">
+            <table class="quota-table">
+              <thead><tr><th style="text-align:left">Mes</th><th>Agua (EUR)</th><th>Luz (EUR)</th><th>Total</th><th>Nota</th><th></th></tr></thead>
+              <tbody id="utilities-tbody"></tbody>
+              <tfoot><tr id="utilities-tfoot"></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- SIDE PANEL (slot detail) -->
@@ -505,6 +525,24 @@ header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overf
   </div>
 </div>
 
+<!-- UTILITY BILL MODAL -->
+<div class="overlay" id="utility-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('utility-modal')">&#x2715;</button>
+    <h2 id="utility-modal-title">Agua &amp; Luz</h2>
+    <div class="alert alert-error" id="utility-err"></div>
+    <div class="input-row">
+      <div class="form-group"><label>Agua (EUR)</label><input type="number" id="ut-water" min="0" step="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label>Luz (EUR)</label><input type="number" id="ut-elec" min="0" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="form-group"><label>Nota (opcional)</label><input type="text" id="ut-note" placeholder="Ex: Fatura Endesa"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-full" onclick="saveUtilityBill()">Guardar</button>
+      <button class="btn btn-danger" id="ut-delete-btn" onclick="deleteUtilityBill()" style="display:none">Apagar</button>
+    </div>
+  </div>
+</div>
+
 <!-- CLEANING MONTH MODAL -->
 <div class="overlay" id="cleaning-modal">
   <div class="modal">
@@ -573,7 +611,8 @@ let quotaFractions = [], quotaPayments = [];
 let quotaYear = new Date().getFullYear();
 let editingFractionId = null;
 let cleaningRecords = [], cleaningYear = new Date().getFullYear();
-let _clModalYear=0, _clModalMonth=0;
+let utilityBills = [], utilitiesYear = new Date().getFullYear();
+let _clModalMonth=0, _utModalMonth=0, _utEditingId=null;
 
 const TIME_SLOTS = (() => {
   const s = [];
@@ -616,7 +655,7 @@ function canAddDates(){ return isAdmin(); }
 let currentTab = 'meetings';
 function switchTab(tab){
   currentTab = tab;
-  ['meetings','quotas','issues','cleaning'].forEach(t=>{
+  ['meetings','quotas','issues','cleaning','utilities'].forEach(t=>{
     $i(`nav-${t}`).classList.toggle('active', t===tab);
     $i(`tab-${t}`).style.display = t===tab ? '' : 'none';
   });
@@ -624,6 +663,7 @@ function switchTab(tab){
   if (tab==='quotas')   renderQuotas();
   if (tab==='issues')   renderIssues();
   if (tab==='cleaning') renderCleaning();
+  if (tab==='utilities') renderUtilities();
 }
 
 // ─── AUTH ─────────────────────────────────
@@ -730,6 +770,11 @@ async function loadCleaning(){
   const {data}=await sb.from('cleaning_dates').select('*').eq('condominium_id',CFG_CONDO_ID)
     .gte('date',y+'-01-01').lte('date',y+'-12-31').order('date');
   cleaningRecords=data||[];
+}
+
+async function loadUtilities(){
+  const {data}=await sb.from('utility_bills').select('*').eq('condominium_id',CFG_CONDO_ID).eq('year',utilitiesYear).order('month');
+  utilityBills=data||[];
 }
 
 // ─── PRESENCE ─────────────────────────────
@@ -1456,6 +1501,84 @@ async function deleteCleaningEntry(id){
   showToast('Apagado.','info');
 }
 
+// ─── UTILITIES ────────────────────────────
+
+function utilitiesNavYear(dir){ utilitiesYear+=dir; loadUtilities().then(()=>renderUtilities()); }
+
+function renderUtilities(){
+  $i('utilities-year-label').textContent=utilitiesYear;
+  var totalW=utilityBills.reduce(function(s,r){ return s+Number(r.water_amount||0); },0);
+  var totalE=utilityBills.reduce(function(s,r){ return s+Number(r.electricity_amount||0); },0);
+  $i('utilities-stats').innerHTML=
+    '<div class="stat-card"><div class="sv">EUR '+totalW.toFixed(2)+'</div><div class="sl">Agua '+utilitiesYear+'</div></div>'+
+    '<div class="stat-card"><div class="sv">EUR '+totalE.toFixed(2)+'</div><div class="sl">Luz '+utilitiesYear+'</div></div>'+
+    '<div class="stat-card"><div class="sv">EUR '+(totalW+totalE).toFixed(2)+'</div><div class="sl">Total</div></div>';
+
+  $i('utilities-tbody').innerHTML=MONTHS_SHORT.map(function(m,i){
+    var month=i+1;
+    var rec=utilityBills.find(function(r){ return r.month===month; });
+    var w=rec?Number(rec.water_amount||0):0;
+    var e=rec?Number(rec.electricity_amount||0):0;
+    var btn=isAdmin()?'<td><button class="btn btn-xs btn-secondary" onclick="openUtilityModal('+month+')">'+
+      (rec?'Editar':'Adicionar')+'</button></td>':'<td></td>';
+    return '<tr>'
+      +'<td style="font-weight:600">'+m+'</td>'
+      +'<td style="text-align:right">'+(w>0?'EUR '+w.toFixed(2):'--')+'</td>'
+      +'<td style="text-align:right">'+(e>0?'EUR '+e.toFixed(2):'--')+'</td>'
+      +'<td style="text-align:right;font-weight:600">'+(w+e>0?'EUR '+(w+e).toFixed(2):'--')+'</td>'
+      +'<td style="font-size:.78rem;color:var(--muted)">'+esc(rec&&rec.note||'')+'</td>'
+      +btn
+      +'</tr>';
+  }).join('');
+
+  $i('utilities-tfoot').innerHTML=
+    '<td style="font-weight:700">TOTAL</td>'
+    +'<td style="text-align:right;font-weight:700">EUR '+totalW.toFixed(2)+'</td>'
+    +'<td style="text-align:right;font-weight:700">EUR '+totalE.toFixed(2)+'</td>'
+    +'<td style="text-align:right;font-weight:700">EUR '+(totalW+totalE).toFixed(2)+'</td>'
+    +'<td colspan="2"></td>';
+}
+
+function openUtilityModal(month){
+  if(!isAdmin()) return;
+  _utModalMonth=month;
+  var rec=utilityBills.find(function(r){ return r.month===month; });
+  _utEditingId=rec?rec.id:null;
+  $i('utility-modal-title').textContent=MONTHS_SHORT[month-1]+' '+utilitiesYear;
+  $i('ut-water').value=rec&&rec.water_amount!=null?rec.water_amount:'';
+  $i('ut-elec').value=rec&&rec.electricity_amount!=null?rec.electricity_amount:'';
+  $i('ut-note').value=rec&&rec.note||'';
+  $i('ut-delete-btn').style.display=rec?'':'none';
+  clearAlert('utility-err');
+  openModal('utility-modal');
+}
+
+async function saveUtilityBill(){
+  var water_amount=parseFloat($i('ut-water').value)||0;
+  var electricity_amount=parseFloat($i('ut-elec').value)||0;
+  var note=($i('ut-note').value||'').trim()||null;
+  clearAlert('utility-err');
+  var r;
+  if(_utEditingId){
+    r=await sb.from('utility_bills').update({water_amount:water_amount,electricity_amount:electricity_amount,note:note}).eq('id',_utEditingId);
+  } else {
+    r=await sb.from('utility_bills').insert({condominium_id:CFG_CONDO_ID,year:utilitiesYear,month:_utModalMonth,water_amount:water_amount,electricity_amount:electricity_amount,note:note,created_by:currentProfile.id});
+  }
+  if(r.error){ showAlert('utility-err','Erro: '+r.error.message); return; }
+  closeModal('utility-modal');
+  await loadUtilities(); renderUtilities();
+  showToast('Guardado!','success');
+}
+
+async function deleteUtilityBill(){
+  if(!_utEditingId||!confirm('Apagar este registo?')) return;
+  var r=await sb.from('utility_bills').delete().eq('id',_utEditingId);
+  if(r.error){ showToast('Erro: '+r.error.message,'error'); return; }
+  closeModal('utility-modal');
+  await loadUtilities(); renderUtilities();
+  showToast('Apagado.','info');
+}
+
 // ─── PROFILE MODAL ────────────────────────
 function openProfileModal(){
   clearAlert('profile-err'); clearAlert('profile-ok');
@@ -1526,7 +1649,7 @@ async function bootSession(session){
     }
     const {data:condo}=await sb.from('condominiums').select('*').eq('id',CFG_CONDO_ID).single();
     currentCondo=condo||null;
-    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning()]);
+    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning(), loadUtilities()]);
     hideLoading();
     renderApp();
   } catch(e){
@@ -1546,7 +1669,7 @@ async function init(){
     if (event==='SIGNED_IN') await bootSession(session);
     if (event==='SIGNED_OUT'){
       currentUser=currentProfile=currentCondo=null;
-      calData={}; quotaFractions=[]; quotaPayments=[]; allIssues=[]; cleaningRecords=[];
+      calData={}; quotaFractions=[]; quotaPayments=[]; allIssues=[]; cleaningRecords=[]; utilityBills=[];
       selectedDate=null; selectedSlot=null; onlineUsers={};
       showScreen('login-screen');
     }
@@ -1554,7 +1677,7 @@ async function init(){
 
   setInterval(async ()=>{
     if (!currentUser||!$i('app-screen').classList.contains('active')) return;
-    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning()]);
+    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues(), loadCleaning(), loadUtilities()]);
     renderMiniCal(); renderTopSlots();
     if (selectedDate) renderAvailPanel(selectedDate);
     if (selectedDate&&selectedSlot) renderSidePanel(selectedDate,selectedSlot);
