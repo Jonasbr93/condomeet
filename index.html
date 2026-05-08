@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CondoMeet</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2d6a4f;--primary-l:#52b788;--primary-d:#1b4332;--primary-xl:#d8f3dc;
+  --bg:#f0f4f8;--card:#fff;--border:#e2e8f0;
+  --text:#1a202c;--muted:#718096;--subtle:#a0aec0;
+  --danger:#e53e3e;--warn:#d97706;--success:#38a169;--info:#3182ce;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --sh-md:0 4px 12px rgba(0,0,0,.1);--r:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.screen{display:none!important}.screen.active{display:block!important}
+#app-screen.active{display:flex!important;flex-direction:column;min-height:100vh}
+#login-screen.active,#register-screen.active,#forgot-screen.active{display:flex!important;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+
+/* AUTH */
+.auth-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh-md);padding:40px;max-width:440px;width:100%}
+.auth-card .logo{width:52px;height:52px;background:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 16px}
+.auth-card h1{font-size:1.4rem;color:var(--primary-d);text-align:center;margin-bottom:6px}
+.auth-card .subtitle{color:var(--muted);font-size:.88rem;text-align:center;margin-bottom:28px}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.83rem;font-weight:600;color:var(--text);margin-bottom:5px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:.93rem;color:var(--text);background:#fff;outline:none;transition:border-color .15s;font-family:inherit}
+textarea{resize:vertical;min-height:80px}
+input:focus,select:focus,textarea:focus{border-color:var(--primary-l);box-shadow:0 0 0 3px rgba(82,183,136,.18)}
+.input-row{display:flex;gap:10px}.input-row .form-group{flex:1}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:.9rem;font-weight:600;border:none;cursor:pointer;transition:background .15s,transform .08s;text-decoration:none;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-d)}
+.btn-secondary{background:#edf2f7;color:var(--text)}.btn-secondary:hover{background:#e2e8f0}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#c53030}
+.btn-warn{background:#fef3c7;color:#92400e;border:1px solid #fde68a}.btn-warn:hover{background:#fde68a}
+.btn-ghost{background:transparent;color:var(--muted);font-weight:400}.btn-ghost:hover{background:rgba(0,0,0,.05)}
+.btn-sm{padding:6px 14px;font-size:.82rem}.btn-xs{padding:3px 9px;font-size:.75rem}
+.btn-full{width:100%}
+.btn-icon{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;flex-shrink:0}
+.btn-icon:hover{background:rgba(255,255,255,.28)}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.badge-admin{background:#dbeafe;color:#1e40af}
+.badge-resident{background:#d1fae5;color:#065f46}
+.badge-paid{background:#d1fae5;color:#065f46}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-overdue{background:#fee2e2;color:#991b1b}
+.badge-payment_requested{background:#dbeafe;color:#1e40af}
+.badge-open{background:#fee2e2;color:#991b1b}
+.badge-in_progress{background:#fef3c7;color:#92400e}
+.badge-resolved{background:#d1fae5;color:#065f46}
+
+/* HEADER */
+header{background:var(--primary-d);color:#fff;padding:0 20px;height:58px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+header .brand{font-weight:800;font-size:1.1rem;letter-spacing:-.02em;white-space:nowrap}
+header .condo-name{font-size:.82rem;opacity:.7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-chip{background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+
+/* NAV TABS */
+.nav-tabs{background:var(--primary-d);border-top:1px solid rgba(255,255,255,.1);display:flex;gap:0;padding:0 12px}
+.nav-tab{padding:10px 18px;border:none;background:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:.85rem;font-weight:600;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px}
+.nav-tab:hover{color:rgba(255,255,255,.9)}
+.nav-tab.active{color:#fff;border-bottom-color:var(--primary-l)}
+.nav-tab .tab-badge{background:var(--danger);color:#fff;border-radius:10px;padding:1px 6px;font-size:.68rem;font-weight:700}
+
+/* APP BODY */
+.app-body{flex:1;display:flex;overflow:hidden}
+.app-main{flex:1;padding:20px;overflow-y:auto;transition:margin-right .25s}
+.app-main.panel-open{margin-right:400px}
+
+/* SIDE PANEL */
+.side-panel{position:fixed;top:58px;right:0;bottom:0;width:400px;background:var(--card);box-shadow:-4px 0 20px rgba(0,0,0,.12);transform:translateX(100%);transition:transform .25s ease;z-index:90;display:flex;flex-direction:column}
+.side-panel.open{transform:translateX(0)}
+.sp-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sp-header h3{font-size:1rem;font-weight:700;color:var(--primary-d);margin-bottom:2px}
+.sp-header .sp-sub{font-size:.82rem;color:var(--muted)}
+.sp-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:1rem;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px}
+.sp-close:hover{background:#f0f0f0}
+.sp-body{flex:1;overflow-y:auto;padding:16px 20px}
+.sp-footer{padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0}
+
+/* PERSON CARD */
+.person-card{background:#f7fafc;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.person-top{display:flex;align-items:center;gap:10px}
+.p-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-l);color:#fff;font-size:.85rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p-avatar.me{background:var(--primary-d)}
+.p-info{flex:1}
+.p-name{font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.p-frac{font-size:.76rem;color:var(--muted)}
+.p-note{margin-top:8px;font-size:.82rem;color:var(--text);background:#fff;border:1px solid var(--border);border-radius:6px;padding:7px 10px;line-height:1.5;white-space:pre-wrap}
+.you-badge{font-size:.68rem;background:var(--primary-xl);color:var(--primary-d);border-radius:10px;padding:1px 7px;font-weight:700}
+.my-action .note-label{font-size:.8rem;font-weight:600;margin-bottom:6px}
+.my-action textarea{font-size:.83rem;min-height:60px;margin-bottom:8px}
+.my-action-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* SECTION */
+.section-label{font-size:.73rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;font-weight:700}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px 20px;margin-bottom:16px}
+
+/* TOP SLOTS */
+.top-grid{display:flex;gap:10px;flex-wrap:wrap}
+.top-card{flex:1;min-width:150px;border-radius:8px;padding:12px 14px;color:#fff;cursor:pointer;transition:transform .1s,box-shadow .1s}
+.top-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.top-card.p1{background:linear-gradient(135deg,#2d6a4f,#52b788)}
+.top-card.p2{background:linear-gradient(135deg,#38a169,#68d391)}
+.top-card.p3{background:linear-gradient(135deg,#718096,#a0aec0)}
+.tc-rank{font-size:.7rem;opacity:.8;margin-bottom:2px}
+.tc-dt{font-size:.95rem;font-weight:700}
+.tc-count{font-size:.8rem;opacity:.9;margin-top:1px}
+.tc-names{font-size:.73rem;opacity:.85;margin-top:4px;line-height:1.5}
+
+/* ONLINE */
+.online-wrap{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:11px 18px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.online-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;flex-shrink:0}
+.online-chip{display:flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:2px 9px;font-size:.76rem;font-weight:600;color:var(--primary-d)}
+
+/* CALENDAR */
+.mini-cal{user-select:none}
+.mini-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mini-cal-nav button{background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:3px 9px;font-size:.85rem;color:var(--text)}
+.mini-cal-nav button:hover{background:#f0f0f0}
+.mini-cal-nav .month-label{font-weight:700;font-size:.93rem}
+.mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mini-cal-dow{text-align:center;font-size:.7rem;color:var(--muted);font-weight:700;padding:3px 0}
+.mini-cal-day{text-align:center;padding:6px 2px;border-radius:6px;cursor:pointer;font-size:.83rem;border:1.5px solid transparent;transition:all .1s}
+.mini-cal-day:hover:not(.empty):not(.past){background:var(--primary-xl);border-color:var(--primary-l)}
+.mini-cal-day.empty{cursor:default}.mini-cal-day.past{color:var(--subtle);cursor:not-allowed}
+.mini-cal-day.today{font-weight:700;color:var(--primary)}
+.mini-cal-day.has-date{background:var(--primary);color:#fff;font-weight:700}
+.mini-cal-day.has-date:hover{background:var(--primary-d)}
+.mini-cal-day.selected{background:var(--primary-l);color:#fff;border-color:var(--primary)}
+.cal-hint{font-size:.76rem;color:var(--muted);margin-top:8px}
+
+/* SLOTS */
+.slots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:7px}
+.slot-btn{border-radius:9px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:.82rem;font-weight:600;text-align:center;transition:all .12s;padding:9px 5px 7px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.slot-btn:hover{border-color:var(--primary-l);background:var(--primary-xl)}
+.slot-btn.mine{background:var(--primary);color:#fff;border-color:var(--primary-d)}.slot-btn.mine:hover{background:var(--primary-d)}
+.slot-btn.others{border-color:#b7dfc5;background:#f0fdf4}
+.slot-btn.active-slot{box-shadow:0 0 0 3px var(--primary-l)}
+.slot-time{font-size:.87rem;font-weight:700}
+.slot-avatars{display:flex;justify-content:center}
+.slot-av{width:18px;height:18px;border-radius:50%;background:var(--primary-l);color:#fff;font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;margin-left:-3px;flex-shrink:0}
+.slot-av:first-child{margin-left:0}.slot-av.me{background:var(--primary-d)}
+.slot-btn.mine .slot-av{border-color:var(--primary-d)}
+.slot-clbl{font-size:.68rem;font-weight:400;opacity:.75}
+
+/* QUOTA TABLE */
+.quota-table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:700px}
+.quota-table th{background:#1b4332;color:#fff;padding:7px 10px;text-align:center;white-space:nowrap;font-size:.73rem;font-weight:700;letter-spacing:.03em}
+.quota-table th.col-frac{text-align:left;min-width:110px}
+.quota-table th.col-desc{text-align:left;min-width:120px}
+.quota-table th.col-amt{min-width:70px}
+.quota-table td{padding:6px 8px;border:1px solid #e2e8f0;text-align:center;vertical-align:middle}
+.quota-table td.td-frac{font-weight:700;color:var(--primary-d);text-align:left;white-space:nowrap}
+.quota-table td.td-desc{color:var(--muted);text-align:left;font-size:.76rem;white-space:nowrap}
+.quota-table td.td-amt{font-weight:600;text-align:right;white-space:nowrap}
+.quota-table td.td-total{font-weight:700;text-align:right;color:var(--primary-d)}
+.quota-table tr:hover td{background:#f7fafc}
+.quota-table tfoot td{background:#f0f4f8;font-weight:700;font-size:.8rem}
+.qcell{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:.85rem;border:1.5px solid transparent;transition:all .1s}
+.qcell:hover{transform:scale(1.15)}
+.qcell.paid{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
+.qcell.pending{background:#f7fafc;border-color:#cbd5e0;color:#a0aec0}
+.qcell.overdue{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.qcell.empty{background:#f7fafc;border-color:#e2e8f0;color:#cbd5e0}
+.qcell.resident{cursor:default}
+.quota-table .tfoot-paid{color:var(--success);font-size:.78rem}
+.quota-table .tfoot-overdue{color:var(--danger);font-size:.78rem}
+
+/* QUOTA LEGEND */
+.quota-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:.78rem;color:var(--muted)}
+.quota-legend span{display:flex;align-items:center;gap:4px}
+
+/* ISSUE CARD */
+.issue-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s}
+.issue-card:hover{box-shadow:var(--sh-md)}
+.issue-card .ic-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.issue-card .ic-title{font-weight:700;font-size:.9rem}
+.issue-card .ic-meta{font-size:.76rem;color:var(--muted);margin-top:4px}
+.issue-card .ic-desc{font-size:.83rem;color:var(--muted);margin-top:6px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* COMMENT */
+.comment{display:flex;gap:10px;margin-bottom:14px}
+.comment .c-av{width:32px;height:32px;border-radius:50%;background:var(--primary-l);color:#fff;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.comment .c-av.me{background:var(--primary-d)}
+.comment .c-bubble{flex:1;background:#f7fafc;border-radius:0 8px 8px 8px;padding:9px 12px}
+.comment .c-header{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.comment .c-name{font-weight:600;font-size:.82rem}
+.comment .c-time{font-size:.73rem;color:var(--muted)}
+.comment .c-body{font-size:.84rem;line-height:1.5;white-space:pre-wrap}
+.comment .c-del{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:2px 5px;border-radius:4px}
+.comment .c-del:hover{background:#fee2e2;color:var(--danger)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px;text-align:center}
+.stat-card .sv{font-size:1.6rem;font-weight:800;color:var(--primary-d)}
+.stat-card .sl{font-size:.76rem;color:var(--muted);margin-top:2px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--r);box-shadow:var(--sh-md);padding:28px;width:100%;max-width:520px;position:relative;animation:pop .15s ease;margin:auto}
+.modal.modal-lg{max-width:680px}
+@keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h2{font-size:1.05rem;margin-bottom:16px;color:var(--primary-d)}
+.modal-close{position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:4px;border-radius:4px}
+.modal-close:hover{background:#f0f0f0}
+.modal-tabs{display:flex;gap:4px;margin-bottom:20px;background:#f7fafc;border-radius:8px;padding:4px}
+.modal-tab{flex:1;padding:7px;border:none;background:none;cursor:pointer;border-radius:6px;font-size:.84rem;font-weight:600;color:var(--muted)}
+.modal-tab.active{background:#fff;color:var(--primary-d);box-shadow:var(--sh)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:.84rem}
+.data-table th{background:#f7fafc;padding:8px 12px;text-align:left;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:2px solid var(--border)}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#fafafa}
+
+/* ALERTS */
+.alert{border-radius:8px;padding:10px 14px;font-size:.84rem;margin-bottom:14px;display:none}
+.alert.show{display:block}
+.alert-error{background:#fff5f5;border:1px solid #fed7d7;color:#c53030}
+.alert-success{background:#f0fff4;border:1px solid #9ae6b4;color:#276749}
+.alert-info{background:#ebf8ff;border:1px solid #90cdf4;color:#2b6cb0}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);display:none;align-items:center;justify-content:center;z-index:900}
+.loading-overlay.active{display:flex}
+.loading-box{background:#fff;border-radius:12px;padding:32px 48px;text-align:center;box-shadow:var(--sh-md)}
+.spinner-lg{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{color:var(--muted);font-size:.9rem}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:.87rem;z-index:9999;display:none;animation:slideUp .2s ease;max-width:320px;color:#fff}
+#toast.show{display:block}
+#toast.error{background:var(--danger)}#toast.success{background:var(--success)}#toast.info{background:var(--info)}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.empty-state{padding:40px 20px;text-align:center;color:var(--muted);font-size:.86rem}
+.empty-state .ei{font-size:2.2rem;margin-bottom:8px}
+
+@media(max-width:700px){
+  .app-main.panel-open{margin-right:0}
+  .side-panel{width:100%}
+  .slots-grid{grid-template-columns:repeat(auto-fill,minmax(85px,1fr))}
+  .auth-card{padding:28px 20px}
+  .nav-tab{padding:10px 10px;font-size:.78rem}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="screen">
+  <div class="auth-card">
+    <div class="logo">🏢</div>
+    <h1>CondoMeet</h1>
+    <p class="subtitle">Entre na sua conta</p>
+    <div class="alert alert-error" id="login-err"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="l-email" placeholder="email@exemplo.com" onkeydown="if(event.key==='Enter')$i('l-pw').focus()"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="l-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar</button>
+    <div style="text-align:center;margin-top:14px;font-size:.84rem">
+      <a href="#" onclick="showScreen('forgot-screen')" style="color:var(--primary)">Esqueci a password</a>
+      &nbsp;·&nbsp;
+      <a href="#" onclick="showScreen('register-screen')" style="color:var(--primary)">Criar conta</a>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="register-screen" class="screen">
+  <div class="auth-card">
+    <div class="logo">🏢</div>
+    <h1>Criar Conta</h1>
+    <p class="subtitle">Registe-se no condomínio</p>
+    <div class="alert alert-error" id="reg-err"></div>
+    <div class="input-row">
+      <div class="form-group"><label>Nome completo</label><input type="text" id="r-name" placeholder="João Silva"></div>
+      <div class="form-group"><label>Fração</label><input type="text" id="r-fraction" placeholder="3B"></div>
+    </div>
+    <div class="form-group"><label>Email</label><input type="email" id="r-email" placeholder="email@exemplo.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="r-pw" placeholder="Mínimo 6 caracteres"></div>
+    <div class="form-group"><label>Confirmar password</label><input type="password" id="r-pw2" placeholder="Repita a password"></div>
+    <button class="btn btn-primary btn-full" onclick="doRegister()">Criar Conta</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:.82rem" onclick="showScreen('login-screen')">← Já tenho conta</button>
+  </div>
+</div>
+
+<!-- FORGOT -->
+<div id="forgot-screen" class="screen">
+  <div class="auth-card">
+    <div class="logo">🔑</div>
+    <h1>Recuperar Password</h1>
+    <p class="subtitle">Enviaremos um link de recuperação</p>
+    <div class="alert alert-error" id="forgot-err"></div>
+    <div class="alert alert-success" id="forgot-ok"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="f-email" placeholder="email@exemplo.com"></div>
+    <button class="btn btn-primary btn-full" onclick="doForgot()">Enviar Link</button>
+    <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:.82rem" onclick="showScreen('login-screen')">← Voltar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="screen">
+  <header>
+    <span class="brand">🏢 CondoMeet</span>
+    <span class="condo-name" id="hdr-condo"></span>
+    <span class="user-chip" id="hdr-user"></span>
+    <button class="btn-icon" title="Perfil" onclick="openProfileModal()">👤</button>
+    <button class="btn-icon" id="hdr-admin-btn" title="Administração" onclick="openAdminModal()" style="display:none">⚙️</button>
+    <button class="btn-icon" title="Sair" onclick="doLogout()">🚪</button>
+  </header>
+
+  <!-- NAV -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" id="nav-meetings" onclick="switchTab('meetings')">📅 Reuniões</button>
+    <button class="nav-tab" id="nav-quotas" onclick="switchTab('quotas')">💶 Quotas <span class="tab-badge" id="quotas-badge" style="display:none">0</span></button>
+    <button class="nav-tab" id="nav-issues" onclick="switchTab('issues')">🔧 Ocorrências <span class="tab-badge" id="issues-badge" style="display:none">0</span></button>
+  </nav>
+
+  <div class="app-body">
+    <div class="app-main" id="app-main">
+
+      <!-- ══ MEETINGS TAB ══ -->
+      <div id="tab-meetings">
+        <div class="online-wrap" id="online-wrap" style="display:none">
+          <span style="font-size:.73rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;white-space:nowrap">🟢 Online</span>
+          <div id="online-chips" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-label">🏆 Melhores Horários</div>
+          <div class="top-grid" id="top-grid">
+            <div class="empty-state" style="padding:6px 0;font-size:.85rem;text-align:left;color:var(--muted)">Ainda sem disponibilidades.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="font-size:.9rem;font-weight:700;margin-bottom:12px">📅 Calendário</h2>
+          <div class="mini-cal" id="mini-cal"></div>
+          <p class="cal-hint" id="cal-hint">Clique numa data para ver disponibilidades. Datas a verde têm respostas.</p>
+        </div>
+
+        <div class="card" id="avail-panel" style="display:none">
+          <h2 style="font-size:.9rem;font-weight:700;margin-bottom:3px" id="avail-title"></h2>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px" id="avail-subtitle"></p>
+          <div class="slots-grid" id="slots-grid"></div>
+        </div>
+      </div>
+
+      <!-- ══ QUOTAS TAB ══ -->
+      <div id="tab-quotas" style="display:none">
+        <div class="stats-grid" id="quota-stats"></div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="btn btn-secondary btn-sm" onclick="quotaNavYear(-1)">&#8249;</button>
+              <span style="font-weight:700;font-size:1rem" id="quota-year-label"></span>
+              <button class="btn btn-secondary btn-sm" onclick="quotaNavYear(1)">&#8250;</button>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary btn-sm" id="btn-add-fraction" onclick="openFractionModal()" style="display:none">+ Fração</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="quota-table" id="quota-table">
+              <thead><tr id="quota-thead"></tr></thead>
+              <tbody id="quota-tbody"></tbody>
+              <tfoot><tr id="quota-tfoot"></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ISSUES TAB ══ -->
+      <div id="tab-issues" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-sm" id="ifilter-open" onclick="setIssueFilter('open')" style="background:var(--primary);color:#fff">Abertas</button>
+            <button class="btn btn-secondary btn-sm" id="ifilter-in_progress" onclick="setIssueFilter('in_progress')">Em curso</button>
+            <button class="btn btn-secondary btn-sm" id="ifilter-resolved" onclick="setIssueFilter('resolved')">Resolvidas</button>
+            <button class="btn btn-secondary btn-sm" id="ifilter-all" onclick="setIssueFilter('all')">Todas</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openNewIssueModal()">+ Nova Ocorrência</button>
+        </div>
+        <div id="issues-list"></div>
+      </div>
+
+    </div>
+
+    <!-- SIDE PANEL (slot detail) -->
+    <div class="side-panel" id="side-panel">
+      <div class="sp-header">
+        <button class="sp-close" onclick="closeSidePanel()">✕</button>
+        <h3 id="sp-title"></h3>
+        <div class="sp-sub" id="sp-sub"></div>
+      </div>
+      <div class="sp-body" id="sp-body"></div>
+      <div class="sp-footer" id="sp-footer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="overlay" id="profile-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('profile-modal')">✕</button>
+    <h2>👤 O Meu Perfil</h2>
+    <div class="alert alert-error" id="profile-err"></div>
+    <div class="alert alert-success" id="profile-ok"></div>
+    <div class="form-group"><label>Nome completo</label><input type="text" id="p-name"></div>
+    <div class="form-group"><label>Fração</label><input type="text" id="p-fraction"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="p-email" disabled style="background:#f7fafc;color:var(--muted)"></div>
+    <div class="form-group"><label>Role</label><div id="p-role-display" style="margin-top:4px"></div></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <div class="form-group"><label>Nova password (opcional)</label><input type="password" id="p-pw" placeholder="Deixe vazio para não alterar"></div>
+    <button class="btn btn-primary btn-full" onclick="saveProfile()">Guardar</button>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="overlay" id="admin-modal">
+  <div class="modal modal-lg">
+    <button class="modal-close" onclick="closeModal('admin-modal')">✕</button>
+    <h2>⚙️ Administração</h2>
+    <div id="users-loading" style="color:var(--muted);font-size:.85rem;padding:8px 0">A carregar...</div>
+    <table class="data-table" id="users-table" style="display:none">
+      <thead><tr><th>Nome</th><th>Fração</th><th>Role</th><th>Ação</th></tr></thead>
+      <tbody id="users-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FRACTION MODAL (admin: gerir frações) -->
+<div class="overlay" id="fraction-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('fraction-modal')">✕</button>
+    <h2 id="fraction-modal-title">➕ Nova Fração</h2>
+    <div class="alert alert-error" id="fraction-err"></div>
+    <div class="input-row">
+      <div class="form-group"><label>Fração</label><input type="text" id="fr-fraction" placeholder="Ex: A, 1Esq, 3B"></div>
+      <div class="form-group"><label>Quota mensal (€)</label><input type="number" id="fr-amount" placeholder="27.77" min="0" step="0.01"></div>
+    </div>
+    <div class="form-group"><label>Descrição (opcional)</label><input type="text" id="fr-desc" placeholder="Ex: 1º Andar Direito — T3"></div>
+    <div class="form-group"><label>Ordem de exibição</label><input type="number" id="fr-order" placeholder="1" min="0"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-primary btn-full" onclick="saveFraction()">Guardar</button>
+      <button class="btn btn-danger" id="fr-delete-btn" onclick="deleteFraction()" style="display:none">🗑️</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT CELL MODAL (admin: editar célula mês×fração) -->
+<div class="overlay" id="payment-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('payment-modal')">✕</button>
+    <h2 id="payment-modal-title">💶 Pagamento</h2>
+    <div class="alert alert-error" id="payment-err"></div>
+    <div class="form-group"><label>Estado</label>
+      <select id="pm-status">
+        <option value="paid">✓ Paga</option>
+        <option value="pending">— Pendente</option>
+        <option value="overdue">⚠ Em atraso</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Nota (opcional)</label><input type="text" id="pm-note" placeholder="Ex: Pago via MB Way"></div>
+    <button class="btn btn-primary btn-full" onclick="savePaymentCell()">Guardar</button>
+  </div>
+</div>
+
+<!-- NEW ISSUE MODAL -->
+<div class="overlay" id="issue-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('issue-modal')">✕</button>
+    <h2>🔧 Nova Ocorrência</h2>
+    <div class="alert alert-error" id="issue-err"></div>
+    <div class="form-group"><label>Título</label><input type="text" id="is-title" placeholder="Ex: Elevador avariado"></div>
+    <div class="form-group"><label>Descrição (opcional)</label><textarea id="is-desc" placeholder="Descreva o problema em detalhe..."></textarea></div>
+    <button class="btn btn-primary btn-full" onclick="saveNewIssue()">Submeter Ocorrência</button>
+  </div>
+</div>
+
+<!-- ISSUE DETAIL MODAL -->
+<div class="overlay" id="issue-detail-modal">
+  <div class="modal modal-lg">
+    <button class="modal-close" onclick="closeModal('issue-detail-modal')">✕</button>
+    <div id="issue-detail-content"></div>
+  </div>
+</div>
+
+<!-- LOADING + TOAST -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-box"><div class="spinner-lg"></div><div class="loading-msg" id="loading-msg">A carregar...</div></div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────
+const CFG_URL      = 'https://nvyxskcwtcqsjpbdoaha.supabase.co';
+const CFG_KEY      = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52eXhza2N3dGNxc2pwYmRvYWhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMDA5MDAsImV4cCI6MjA5Mzc3NjkwMH0.R0uVQulBLUljAfQ-SlFZe7NLj9EJIJTZ4qKqUxJJzwo';
+const CFG_CONDO_ID = '6fde2f8c-ac01-4677-a2e6-6f9beaea47f3';
+const CFG_ADMIN_EMAIL = '';
+
+// ─── STATE ────────────────────────────────
+let sb = null, currentUser = null, currentProfile = null, currentCondo = null;
+let selectedDate = null, selectedSlot = null;
+let calData = {};
+let calViewYear = 0, calViewMonth = 0;
+let presenceChannel = null, onlineUsers = {};
+let allIssues = [], issueFilter = 'open';
+let quotaFractions = [], quotaPayments = [];
+let quotaYear = new Date().getFullYear();
+let editingFractionId = null;
+
+const TIME_SLOTS = (() => {
+  const s = [];
+  for (let h = 8; h < 23; h++) { s.push(`${ph(h)}:00`); s.push(`${ph(h)}:30`); }
+  s.push('23:00'); return s;
+})();
+function ph(n){ return String(n).padStart(2,'0'); }
+
+const ROLES_PT   = { admin:'Admin', resident:'Morador' };
+const STATUS_PT  = { paid:'Paga', pending:'Pendente', overdue:'Em atraso', payment_requested:'A confirmar' };
+const ISTATUS_PT = { open:'Aberta', in_progress:'Em curso', resolved:'Resolvida' };
+
+// ─── UTILS ────────────────────────────────
+const $i = id => document.getElementById(id);
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $i(id).classList.add('active'); }
+function showLoading(m='A carregar...'){ $i('loading-msg').textContent=m; $i('loading-overlay').classList.add('active'); }
+function hideLoading(){ $i('loading-overlay').classList.remove('active'); }
+function showToast(msg,type='info'){ const t=$i('toast'); t.textContent=msg; t.className=`show ${type}`; clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3500); }
+function openModal(id){ $i(id).classList.add('open'); }
+function closeModal(id){ $i(id).classList.remove('open'); }
+function showAlert(id,msg,type='error'){ const e=$i(id); e.textContent=msg; e.className=`alert alert-${type} show`; }
+function clearAlert(id){ const e=$i(id); e.className='alert'; e.textContent=''; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function initials(n){ return (n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+function badge(cls,txt){ return `<span class="badge badge-${cls}">${txt}</span>`; }
+function fmtDate(d){
+  const [y,m,day]=d.split('-');
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const date=new Date(+y,+m-1,+day);
+  return `${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][date.getDay()]} ${+day} ${months[+m-1]} ${y}`;
+}
+function fmtDateTime(ts){
+  const d=new Date(ts);
+  return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${ph(d.getHours())}:${ph(d.getMinutes())}`;
+}
+function isAdmin(){ return currentProfile?.role==='admin'; }
+function canAddDates(){ return isAdmin(); }
+
+// ─── TAB NAVIGATION ───────────────────────
+let currentTab = 'meetings';
+function switchTab(tab){
+  currentTab = tab;
+  ['meetings','quotas','issues'].forEach(t=>{
+    $i(`nav-${t}`).classList.toggle('active', t===tab);
+    $i(`tab-${t}`).style.display = t===tab ? '' : 'none';
+  });
+  closeSidePanel();
+  if (tab==='quotas')  renderQuotas();
+  if (tab==='issues')  renderIssues();
+}
+
+// ─── AUTH ─────────────────────────────────
+async function doLogin(){
+  const email=$i('l-email').value.trim(), pw=$i('l-pw').value;
+  clearAlert('login-err');
+  if (!email||!pw){ showAlert('login-err','Preencha email e password.'); return; }
+  showLoading('A entrar...');
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  if (error){ hideLoading(); showAlert('login-err',xlateErr(error.message)); }
+}
+
+async function doRegister(){
+  const name=$i('r-name').value.trim(), fraction=$i('r-fraction').value.trim().toUpperCase();
+  const email=$i('r-email').value.trim(), pw=$i('r-pw').value, pw2=$i('r-pw2').value;
+  clearAlert('reg-err');
+  if (!name)      { showAlert('reg-err','Insira o seu nome.'); return; }
+  if (!fraction)  { showAlert('reg-err','Insira a sua fração.'); return; }
+  if (!email)     { showAlert('reg-err','Insira o seu email.'); return; }
+  if (pw.length<6){ showAlert('reg-err','Password mínimo 6 caracteres.'); return; }
+  if (pw!==pw2)   { showAlert('reg-err','As passwords não coincidem.'); return; }
+  const role = (CFG_ADMIN_EMAIL && email===CFG_ADMIN_EMAIL) ? 'admin' : 'resident';
+  const meta = { full_name:name, fraction, role, condominium_id:CFG_CONDO_ID };
+  showLoading('A criar conta...');
+  const {error}=await sb.auth.signUp({email,password:pw,options:{data:meta}});
+  if (error){ hideLoading(); showAlert('reg-err',xlateErr(error.message)); return; }
+  const {error:le}=await sb.auth.signInWithPassword({email,password:pw});
+  if (le){ hideLoading(); showAlert('reg-err','✅ Conta criada! Faça login.','success'); return; }
+  const uid=(await sb.auth.getUser()).data.user.id;
+  await sb.from('profiles').update({full_name:name,fraction,condominium_id:CFG_CONDO_ID}).eq('id',uid);
+  hideLoading();
+}
+
+async function doForgot(){
+  const email=$i('f-email').value.trim();
+  clearAlert('forgot-err'); clearAlert('forgot-ok');
+  if (!email){ showAlert('forgot-err','Insira o seu email.'); return; }
+  showLoading('A enviar...');
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.href});
+  hideLoading();
+  if (error){ showAlert('forgot-err',xlateErr(error.message)); return; }
+  showAlert('forgot-ok','Email enviado!','success');
+}
+
+async function doLogout(){
+  showLoading('A sair...');
+  if (presenceChannel){ await sb.removeChannel(presenceChannel); presenceChannel=null; }
+  await sb.auth.signOut();
+  hideLoading();
+}
+
+function xlateErr(msg){
+  if (msg.includes('Invalid login'))       return 'Email ou password incorretos.';
+  if (msg.includes('Email not confirmed')) return 'Confirme o email antes de entrar.';
+  if (msg.includes('already registered'))  return 'Email já registado.';
+  if (msg.includes('rate limit'))          return 'Demasiadas tentativas. Aguarde.';
+  return msg;
+}
+
+// ─── LOAD DATA ────────────────────────────
+async function loadProfile(uid){
+  const {data,error}=await sb.from('profiles').select('*').eq('id',uid).single();
+  if (error) throw new Error('Perfil não encontrado: '+error.message);
+  return data;
+}
+
+async function loadCalendarData(){
+  calData={};
+  const {data:dates}=await sb.from('calendar_dates').select('*').eq('condominium_id',CFG_CONDO_ID);
+  if (!dates?.length) return;
+  const {data:avails}=await sb.from('availabilities')
+    .select('id, calendar_date_id, profile_id, time_slot, note, profiles(id,full_name,fraction,role)')
+    .in('calendar_date_id', dates.map(d=>d.id));
+  dates.forEach(d=>{ calData[d.date]={dateId:d.id,slots:{}}; TIME_SLOTS.forEach(t=>calData[d.date].slots[t]=[]); });
+  (avails||[]).forEach(a=>{
+    const entry=Object.values(calData).find(e=>e.dateId===a.calendar_date_id);
+    if (entry && entry.slots[a.time_slot]) entry.slots[a.time_slot].push(a);
+  });
+}
+
+async function loadQuotas(){
+  const {data:fracs}=await sb.from('quota_fractions').select('*').eq('condominium_id',CFG_CONDO_ID).order('sort_order').order('fraction');
+  quotaFractions=fracs||[];
+  const fracIds=quotaFractions.map(f=>f.id);
+  if (fracIds.length){
+    const {data:pmts}=await sb.from('quota_payments').select('*').in('fraction_id',fracIds).eq('year',quotaYear);
+    quotaPayments=pmts||[];
+  } else { quotaPayments=[]; }
+}
+
+async function loadIssues(){
+  const {data}=await sb.from('issues')
+    .select('*, profiles(id,full_name,fraction)')
+    .eq('condominium_id',CFG_CONDO_ID)
+    .order('created_at',{ascending:false});
+  allIssues=data||[];
+  const open=allIssues.filter(i=>i.status==='open').length;
+  $i('issues-badge').textContent=open;
+  $i('issues-badge').style.display=open>0?'':'none';
+}
+
+// ─── PRESENCE ─────────────────────────────
+function startPresence(){
+  presenceChannel=sb.channel(`presence:${CFG_CONDO_ID}`,{config:{presence:{key:currentUser.id}}});
+  presenceChannel
+    .on('presence',{event:'sync'},()=>{
+      const state=presenceChannel.presenceState(); onlineUsers={};
+      Object.entries(state).forEach(([uid,p])=>{ if(p[0]) onlineUsers[uid]={name:p[0].name,fraction:p[0].fraction}; });
+      renderOnline();
+    })
+    .subscribe(async s=>{ if(s==='SUBSCRIBED') await presenceChannel.track({name:currentProfile.full_name,fraction:currentProfile.fraction||''}); });
+}
+
+function renderOnline(){
+  const wrap=$i('online-wrap'), chips=$i('online-chips');
+  const all=Object.entries(onlineUsers);
+  if (!all.length){ wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  chips.innerHTML=all.map(([uid,u])=>`<span class="online-chip"><span class="online-dot"></span>${esc(u.name)}${u.fraction?' ('+esc(u.fraction)+')':''}${uid===currentUser.id?' <em style="opacity:.6;font-weight:400">(eu)</em>':''}</span>`).join('');
+}
+
+// ─── RENDER APP ───────────────────────────
+function renderApp(){
+  $i('hdr-condo').textContent=currentCondo?.name||'CondoMeet';
+  $i('hdr-user').textContent=`${currentProfile.full_name} · ${currentProfile.fraction||'—'}`;
+  $i('hdr-admin-btn').style.display=isAdmin()?'flex':'none';
+  if (isAdmin()) $i('btn-add-fraction').style.display='';
+  const now=new Date(); calViewYear=now.getFullYear(); calViewMonth=now.getMonth();
+  renderMiniCal(); renderTopSlots();
+  showScreen('app-screen');
+  startPresence();
+}
+
+// ─── CALENDAR ─────────────────────────────
+function renderMiniCal(){
+  const c=$i('mini-cal');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const y=calViewYear,m=calViewMonth;
+  const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const firstDay=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  let h=`<div class="mini-cal-nav">
+    <button onclick="calNav(-1)">&#8249;</button>
+    <span class="month-label">${months[m]} ${y}</span>
+    <button onclick="calNav(1)">&#8250;</button>
+  </div><div class="mini-cal-grid">
+    <div class="mini-cal-dow">Dom</div><div class="mini-cal-dow">Seg</div><div class="mini-cal-dow">Ter</div>
+    <div class="mini-cal-dow">Qua</div><div class="mini-cal-dow">Qui</div><div class="mini-cal-dow">Sex</div><div class="mini-cal-dow">Sáb</div>`;
+  for (let i=0;i<firstDay;i++) h+='<div class="mini-cal-day empty"></div>';
+  for (let d=1;d<=days;d++){
+    const date=new Date(y,m,d); date.setHours(0,0,0,0);
+    const ds=`${y}-${ph(m+1)}-${ph(d)}`;
+    const past=date<today, isToday=date.getTime()===today.getTime();
+    let cls='mini-cal-day';
+    if (past) cls+=' past'; if (isToday) cls+=' today';
+    if (calData[ds]) cls+=' has-date'; if (ds===selectedDate) cls+=' selected';
+    h+=`<div class="${cls}" ${past?'':`onclick="selectDate('${ds}')"`}>${d}</div>`;
+  }
+  h+='</div>'; c.innerHTML=h;
+}
+
+function calNav(dir){
+  calViewMonth+=dir;
+  if (calViewMonth>11){calViewMonth=0;calViewYear++;} if (calViewMonth<0){calViewMonth=11;calViewYear--;}
+  renderMiniCal();
+}
+
+async function selectDate(ds){
+  selectedDate=ds; renderMiniCal();
+  if (!calData[ds]){
+    if (!canAddDates()){ renderAvailPanel(ds); return; }
+    const {data,error}=await sb.from('calendar_dates').insert({condominium_id:CFG_CONDO_ID,date:ds,created_by:currentProfile.id}).select().single();
+    if (error){ showToast('Erro: '+error.message,'error'); return; }
+    calData[ds]={dateId:data.id,slots:{}}; TIME_SLOTS.forEach(t=>calData[ds].slots[t]=[]);
+    renderMiniCal();
+  }
+  renderAvailPanel(ds);
+}
+
+// ─── AVAIL PANEL ──────────────────────────
+function renderAvailPanel(ds){
+  const panel=$i('avail-panel'); panel.style.display='';
+  $i('avail-title').textContent=`📋 ${fmtDate(ds)}`;
+  const entry=calData[ds];
+  if (!entry){
+    $i('avail-subtitle').textContent='Esta data ainda não foi aberta pelo administrador.';
+    $i('slots-grid').innerHTML='<p style="color:var(--muted);font-size:.83rem">O administrador ainda não abriu esta data.</p>';
+    panel.scrollIntoView({behavior:'smooth',block:'nearest'}); return;
+  }
+  const myId=currentProfile.id;
+  const people=new Set(Object.values(entry.slots).flatMap(arr=>arr.map(a=>a.profile_id)).filter(Boolean));
+  $i('avail-subtitle').textContent=people.size>0
+    ?`${people.size} pessoa${people.size>1?'s':''} responderam. Clique num horário para ver detalhes.`
+    :'Seja o primeiro! Clique num horário para marcar disponibilidade.';
+  let h='';
+  TIME_SLOTS.forEach(t=>{
+    const pp=entry.slots[t]||[], cnt=pp.length;
+    const isMine=pp.some(a=>a.profile_id===myId);
+    const isActive=ds===selectedDate&&t===selectedSlot;
+    let cls='slot-btn';
+    if (isMine) cls+=' mine'; else if (cnt>0) cls+=' others';
+    if (isActive) cls+=' active-slot';
+    const avs=pp.slice(0,3).map(a=>`<span class="slot-av${a.profile_id===myId?' me':''}">${initials(a.profiles?.full_name)}</span>`).join('');
+    const extra=cnt>3?`<span class="slot-av" style="background:var(--muted)">+${cnt-3}</span>`:'';
+    h+=`<button class="${cls}" onclick="openSidePanel('${ds}','${t}')">
+      <span class="slot-time">${t}</span>
+      ${cnt>0?`<div class="slot-avatars">${avs}${extra}</div>`:'<div style="height:18px"></div>'}
+      <span class="slot-clbl">${cnt>0?cnt+(cnt>1?' pessoas':' pessoa'):'—'}</span>
+    </button>`;
+  });
+  $i('slots-grid').innerHTML=h;
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ─── SIDE PANEL ───────────────────────────
+function openSidePanel(ds,slot){
+  selectedSlot=slot;
+  $i('sp-title').textContent=`🕐 ${slot}`;
+  $i('sp-sub').textContent=fmtDate(ds);
+  renderSidePanel(ds,slot);
+  $i('side-panel').classList.add('open');
+  $i('app-main').classList.add('panel-open');
+  if (selectedDate) renderAvailPanel(selectedDate);
+}
+
+function closeSidePanel(){
+  selectedSlot=null;
+  $i('side-panel').classList.remove('open');
+  $i('app-main').classList.remove('panel-open');
+  if (selectedDate) renderAvailPanel(selectedDate);
+}
+
+function renderSidePanel(ds,slot){
+  const entry=calData[ds]; if (!entry) return;
+  const pp=entry.slots[slot]||[], myId=currentProfile.id;
+  const myAvail=pp.find(a=>a.profile_id===myId);
+
+  // Body: people list
+  $i('sp-body').innerHTML = pp.length===0
+    ? '<div class="empty-state"><div class="ei">🙋</div>Ninguém marcou ainda.</div>'
+    : pp.map(a=>{
+        const prof=a.profiles||{};
+        const isMe=a.profile_id===myId;
+        const name=prof.full_name||currentProfile.full_name||'?';
+        const frac=prof.fraction||currentProfile.fraction||'—';
+        const role=prof.role||currentProfile.role||'resident';
+        return `<div class="person-card">
+          <div class="person-top">
+            <div class="p-avatar${isMe?' me':''}">${initials(name)}</div>
+            <div class="p-info">
+              <div class="p-name">${esc(name)}${isMe?'<span class="you-badge">Eu</span>':''}${badge(role,ROLES_PT[role]||role)}</div>
+              <div class="p-frac">Fração ${esc(frac)}</div>
+            </div>
+          </div>
+          ${a.note?`<div class="p-note">💬 ${esc(a.note)}</div>`:''}
+        </div>`;
+      }).join('');
+
+  // Footer: my action
+  const footer=$i('sp-footer');
+  if (myAvail){
+    footer.innerHTML=`<div class="my-action">
+      <div class="note-label">A minha nota:</div>
+      <textarea id="sp-note" placeholder="Ex: Só posso 15 minutos...">${esc(myAvail.note||'')}</textarea>
+      <div class="my-action-btns">
+        <button class="btn btn-primary btn-sm" onclick="saveNote('${ds}','${slot}')">💾 Guardar nota</button>
+        <button class="btn btn-danger btn-sm" onclick="removeAvail('${ds}','${slot}')">✕ Remover</button>
+      </div>
+    </div>`;
+  } else {
+    footer.innerHTML=`<div class="my-action">
+      <div class="note-label">Nota (opcional):</div>
+      <textarea id="sp-note" placeholder="Ex: Só posso 15 minutos..."></textarea>
+      <div class="my-action-btns">
+        <button class="btn btn-primary btn-sm" onclick="addAvail('${ds}','${slot}')">✓ Marcar disponibilidade</button>
+      </div>
+    </div>`;
+  }
+}
+
+async function addAvail(ds,slot){
+  const entry=calData[ds]; if (!entry) return;
+  const note=($i('sp-note')?.value||'').trim();
+  const {data,error}=await sb.from('availabilities')
+    .insert({calendar_date_id:entry.dateId,profile_id:currentProfile.id,time_slot:slot,note:note||null})
+    .select('id,calendar_date_id,profile_id,time_slot,note,profiles(id,full_name,fraction,role)').single();
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  // Ensure profiles field is populated (fallback to currentProfile)
+  if (!data.profiles) data.profiles={id:currentProfile.id,full_name:currentProfile.full_name,fraction:currentProfile.fraction,role:currentProfile.role};
+  entry.slots[slot]=[...(entry.slots[slot]||[]),data];
+  renderSidePanel(ds,slot); renderAvailPanel(ds); renderTopSlots(); renderMiniCal();
+  showToast('Disponibilidade marcada!','success');
+}
+
+async function removeAvail(ds,slot){
+  const entry=calData[ds]; if (!entry) return;
+  const mine=entry.slots[slot]?.find(a=>a.profile_id===currentProfile.id);
+  if (!mine) return;
+  const {error}=await sb.from('availabilities').delete().eq('id',mine.id);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  entry.slots[slot]=entry.slots[slot].filter(a=>a.id!==mine.id);
+  renderSidePanel(ds,slot); renderAvailPanel(ds); renderTopSlots(); renderMiniCal();
+  showToast('Removido.','info');
+}
+
+async function saveNote(ds,slot){
+  const entry=calData[ds]; if (!entry) return;
+  const idx=entry.slots[slot]?.findIndex(a=>a.profile_id===currentProfile.id);
+  if (idx<0) return;
+  const note=($i('sp-note')?.value||'').trim();
+  const mine=entry.slots[slot][idx];
+  const {error}=await sb.from('availabilities').update({note:note||null}).eq('id',mine.id);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  entry.slots[slot][idx]={...mine,note:note||null};
+  renderSidePanel(ds,slot);
+  showToast('Nota guardada!','success');
+}
+
+// ─── TOP SLOTS ────────────────────────────
+function renderTopSlots(){
+  const grid=$i('top-grid');
+  const entries=[];
+  Object.entries(calData).forEach(([ds,entry])=>{
+    TIME_SLOTS.forEach(t=>{ const pp=entry.slots[t]||[]; if(pp.length>0) entries.push({ds,t,count:pp.length,pp}); });
+  });
+  entries.sort((a,b)=>b.count-a.count);
+  const top=entries.slice(0,3);
+  if (!top.length){ grid.innerHTML='<div style="color:var(--muted);font-size:.85rem">Ainda sem disponibilidades.</div>'; return; }
+  const cls=['p1','p2','p3'], medals=['🥇 1.º','🥈 2.º','🥉 3.º'];
+  grid.innerHTML=top.map((e,i)=>{
+    const names=e.pp.slice(0,3).map(a=>{ const n=a.profiles?.full_name||'?'; return esc(n); });
+    const extra=e.count>3?` +${e.count-3}`:'';
+    return `<div class="top-card ${cls[i]}" onclick="selectDate('${e.ds}').then(()=>openSidePanel('${e.ds}','${e.t}'))">
+      <div class="tc-rank">${medals[i]}</div>
+      <div class="tc-dt">${fmtDate(e.ds)} · ${e.t}</div>
+      <div class="tc-count">${e.count} pessoa${e.count>1?'s':''} disponível${e.count>1?'is':''}</div>
+      <div class="tc-names">${names.join(', ')}${extra}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── QUOTAS ───────────────────────────────
+const MONTHS_SHORT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function quotaNavYear(dir){
+  quotaYear+=dir;
+  loadQuotas().then(()=>renderQuotas());
+}
+
+function getPayment(fracId, month){
+  return quotaPayments.find(p=>p.fraction_id===fracId && p.month===month)||null;
+}
+
+function renderQuotas(){
+  $i('quota-year-label').textContent=quotaYear;
+
+  // For resident: only show their own row (match fraction field)
+  const myFrac=currentProfile.fraction?.toUpperCase();
+  const fracs = isAdmin() ? quotaFractions : quotaFractions.filter(f=>f.fraction.toUpperCase()===myFrac);
+
+  // Stats
+  const allPmts = isAdmin() ? quotaPayments : quotaPayments.filter(p=>fracs.some(f=>f.id===p.fraction_id));
+  const paid=allPmts.filter(p=>p.status==='paid').length;
+  const overdue=allPmts.filter(p=>p.status==='overdue').length;
+  const pending=allPmts.filter(p=>p.status==='pending').length;
+  const totalCells=fracs.length*12;
+  const paidAmt=fracs.reduce((s,f)=>{
+    const ct=quotaPayments.filter(p=>p.fraction_id===f.id&&p.status==='paid').length;
+    return s+ct*Number(f.monthly_amount);
+  },0);
+  const totalAmt=fracs.reduce((s,f)=>s+12*Number(f.monthly_amount),0);
+  $i('quota-stats').innerHTML=`
+    <div class="stat-card"><div class="sv" style="color:var(--success)">${paid}</div><div class="sl">Pagas</div></div>
+    <div class="stat-card"><div class="sv" style="color:var(--warn)">${pending}</div><div class="sl">Pendentes</div></div>
+    <div class="stat-card"><div class="sv" style="color:var(--danger)">${overdue}</div><div class="sl">Em atraso</div></div>
+    <div class="stat-card"><div class="sv">€${paidAmt.toFixed(0)}</div><div class="sl">Recebido</div></div>
+    <div class="stat-card"><div class="sv" style="color:var(--muted)">€${totalAmt.toFixed(0)}</div><div class="sl">Total anual</div></div>`;
+
+  if (!fracs.length){
+    $i('quota-table').parentElement.innerHTML=`<div class="empty-state"><div class="ei">💶</div>${isAdmin()?'Adicione frações com o botão + Fração.':'Sem frações configuradas. Contacte o administrador.'}</div>`;
+    return;
+  }
+
+  // Header
+  let head=`<th class="col-frac">Fração</th><th class="col-desc">Designação</th><th class="col-amt">Quota</th>`;
+  MONTHS_SHORT.forEach((m,i)=>head+=`<th style="min-width:36px">${m}</th>`);
+  head+=`<th style="min-width:70px">Total</th>`;
+  $i('quota-thead').innerHTML=head;
+
+  // Body
+  $i('quota-tbody').innerHTML=fracs.map(f=>{
+    const paidCount=quotaPayments.filter(p=>p.fraction_id===f.id&&p.status==='paid').length;
+    const fracTotal=paidCount*Number(f.monthly_amount);
+    let cells='';
+    for(let m=1;m<=12;m++){
+      const pmt=getPayment(f.id,m);
+      const st=pmt?.status||'empty';
+      const icon=st==='paid'?'✓':st==='overdue'?'⚠':st==='pending'?'·':'';
+      const title=pmt?.note?`title="${esc(pmt.note)}"`:''
+      const clickFn=isAdmin()?`onclick="openPaymentModal('${f.id}','${m}','${f.fraction}')"`:'';
+      cells+=`<td><span class="qcell ${st}${isAdmin()?'':' resident'}" ${title} ${clickFn}>${icon}</span></td>`;
+    }
+    const editBtn=isAdmin()?`<button class="btn btn-xs btn-secondary" style="margin-left:6px;padding:1px 5px" onclick="openFractionModal('${f.id}')">✏️</button>`:'';
+    return `<tr>
+      <td class="td-frac">${esc(f.fraction)}${editBtn}</td>
+      <td class="td-desc">${esc(f.description||'')}</td>
+      <td class="td-amt">€${Number(f.monthly_amount).toFixed(2)}</td>
+      ${cells}
+      <td class="td-total">€${fracTotal.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  // Footer totals
+  let foot=`<td colspan="2" style="text-align:left;font-weight:700">TOTAL</td><td class="td-amt">€${fracs.reduce((s,f)=>s+Number(f.monthly_amount),0).toFixed(2)}</td>`;
+  for(let m=1;m<=12;m++){
+    const ct=fracs.filter(f=>getPayment(f.id,m)?.status==='paid').length;
+    const ov=fracs.filter(f=>getPayment(f.id,m)?.status==='overdue').length;
+    foot+=`<td style="font-size:.72rem;line-height:1.2">
+      <span class="tfoot-paid">${ct}✓</span>${ov>0?`<br><span class="tfoot-overdue">${ov}⚠</span>`:''}
+    </td>`;
+  }
+  foot+=`<td class="td-total">€${paidAmt.toFixed(2)}</td>`;
+  $i('quota-tfoot').innerHTML=foot;
+}
+
+// Fraction CRUD
+let _pmModalFracId=null, _pmModalMonth=null;
+
+function openPaymentModal(fracId,month,fracName){
+  _pmModalFracId=fracId; _pmModalMonth=Number(month);
+  const pmt=getPayment(fracId,Number(month));
+  $i('payment-modal-title').textContent=`💶 ${fracName} — ${MONTHS_SHORT[month-1]} ${quotaYear}`;
+  $i('pm-status').value=pmt?.status||'pending';
+  $i('pm-note').value=pmt?.note||'';
+  clearAlert('payment-err');
+  openModal('payment-modal');
+}
+
+async function savePaymentCell(){
+  const status=$i('pm-status').value;
+  const note=($i('pm-note').value||'').trim()||null;
+  clearAlert('payment-err');
+  const existing=getPayment(_pmModalFracId,_pmModalMonth);
+  const paid_at=status==='paid'?(existing?.paid_at||new Date().toISOString()):null;
+  let error;
+  if (existing){
+    ({error}=await sb.from('quota_payments').update({status,note,paid_at}).eq('id',existing.id));
+  } else {
+    ({error}=await sb.from('quota_payments').insert({fraction_id:_pmModalFracId,year:quotaYear,month:_pmModalMonth,status,note,paid_at}));
+  }
+  if (error){ showAlert('payment-err','Erro: '+error.message); return; }
+  closeModal('payment-modal');
+  await loadQuotas(); renderQuotas();
+  showToast('Guardado!','success');
+}
+
+function openFractionModal(id=null){
+  clearAlert('fraction-err');
+  editingFractionId=id;
+  if (id){
+    const f=quotaFractions.find(x=>x.id===id); if (!f) return;
+    $i('fraction-modal-title').textContent='✏️ Editar Fração';
+    $i('fr-fraction').value=f.fraction;
+    $i('fr-amount').value=f.monthly_amount;
+    $i('fr-desc').value=f.description||'';
+    $i('fr-order').value=f.sort_order||0;
+    $i('fr-delete-btn').style.display='';
+  } else {
+    $i('fraction-modal-title').textContent='➕ Nova Fração';
+    $i('fr-fraction').value=''; $i('fr-amount').value=''; $i('fr-desc').value=''; $i('fr-order').value='0';
+    $i('fr-delete-btn').style.display='none';
+  }
+  openModal('fraction-modal');
+}
+
+async function saveFraction(){
+  const fraction=$i('fr-fraction').value.trim().toUpperCase();
+  const monthly_amount=parseFloat($i('fr-amount').value);
+  const description=$i('fr-desc').value.trim()||null;
+  const sort_order=parseInt($i('fr-order').value)||0;
+  clearAlert('fraction-err');
+  if (!fraction){ showAlert('fraction-err','Insira a fração.'); return; }
+  if (isNaN(monthly_amount)||monthly_amount<0){ showAlert('fraction-err','Valor inválido.'); return; }
+  let error;
+  if (editingFractionId){
+    ({error}=await sb.from('quota_fractions').update({fraction,monthly_amount,description,sort_order}).eq('id',editingFractionId));
+  } else {
+    ({error}=await sb.from('quota_fractions').insert({condominium_id:CFG_CONDO_ID,fraction,monthly_amount,description,sort_order}));
+  }
+  if (error){ showAlert('fraction-err','Erro: '+error.message); return; }
+  closeModal('fraction-modal');
+  await loadQuotas(); renderQuotas();
+  showToast(editingFractionId?'Fração atualizada!':'Fração adicionada!','success');
+}
+
+async function deleteFraction(){
+  if (!editingFractionId||!confirm('Apagar esta fração e todos os seus pagamentos?')) return;
+  const {error}=await sb.from('quota_fractions').delete().eq('id',editingFractionId);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  closeModal('fraction-modal');
+  await loadQuotas(); renderQuotas();
+  showToast('Fração apagada.','info');
+}
+
+// ─── ISSUES ───────────────────────────────
+function setIssueFilter(f){
+  issueFilter=f;
+  ['open','in_progress','resolved','all'].forEach(x=>{
+    const btn=$i(`ifilter-${x}`);
+    btn.className=x===f?'btn btn-sm':'btn btn-secondary btn-sm';
+    if(x===f) btn.style.background='var(--primary)', btn.style.color='#fff';
+    else btn.style.background='', btn.style.color='';
+  });
+  renderIssues();
+}
+
+function renderIssues(){
+  const list = issueFilter==='all' ? allIssues : allIssues.filter(i=>i.status===issueFilter);
+  if (!list.length){
+    $i('issues-list').innerHTML=`<div class="empty-state"><div class="ei">✅</div>${issueFilter==='open'?'Sem ocorrências abertas.':'Sem resultados.'}</div>`;
+    return;
+  }
+  $i('issues-list').innerHTML=list.map(issue=>{
+    const prof=issue.profiles||{};
+    const name=prof.full_name||'?';
+    const stBadge=badge(issue.status,ISTATUS_PT[issue.status]||issue.status);
+    const costTag=issue.cost?`<span style="font-size:.75rem;background:#fef3c7;color:#92400e;border-radius:20px;padding:1px 8px;font-weight:700">💰 €${Number(issue.cost).toFixed(2)}</span>`:'';
+    // Quick status buttons for admin (only show transitions that make sense)
+    const statusActions=isAdmin()?`<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+      ${issue.status!=='in_progress'?`<button class="btn btn-xs btn-warn" onclick="event.stopPropagation();setIssueStatus('${issue.id}','in_progress')">▶ Em curso</button>`:''}
+      ${issue.status!=='resolved'?`<button class="btn btn-xs btn-primary" onclick="event.stopPropagation();setIssueStatus('${issue.id}','resolved')">✓ Resolver</button>`:''}
+      ${issue.status!=='open'?`<button class="btn btn-xs btn-secondary" onclick="event.stopPropagation();setIssueStatus('${issue.id}','open')">↩ Reabrir</button>`:''}
+    </div>`:'';
+    return `<div class="issue-card" onclick="openIssueDetail('${issue.id}')">
+      <div class="ic-top">
+        <div>
+          <div class="ic-title">${esc(issue.title)}</div>
+          <div class="ic-meta" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">Por ${esc(name)} · ${fmtDateTime(issue.created_at)} ${stBadge} ${costTag}</div>
+        </div>
+      </div>
+      ${issue.description?`<div class="ic-desc">${esc(issue.description)}</div>`:''}
+      ${statusActions}
+    </div>`;
+  }).join('');
+}
+
+function openNewIssueModal(){
+  clearAlert('issue-err');
+  $i('is-title').value=''; $i('is-desc').value='';
+  openModal('issue-modal');
+}
+
+async function saveNewIssue(){
+  const title=$i('is-title').value.trim(), desc=$i('is-desc').value.trim();
+  clearAlert('issue-err');
+  if (!title){ showAlert('issue-err','Insira um título.'); return; }
+  showLoading('A submeter...');
+  const {error}=await sb.from('issues').insert({condominium_id:CFG_CONDO_ID,title,description:desc||null,created_by:currentProfile.id});
+  hideLoading();
+  if (error){ showAlert('issue-err','Erro: '+error.message); return; }
+  closeModal('issue-modal');
+  await loadIssues(); renderIssues();
+  showToast('Ocorrência submetida!','success');
+}
+
+async function openIssueDetail(id){
+  const issue=allIssues.find(i=>i.id===id); if (!issue) return;
+  const {data:comments}=await sb.from('issue_comments')
+    .select('*, profiles(id,full_name,fraction)').eq('issue_id',id).order('created_at');
+  const prof=issue.profiles||{};
+  const myId=currentProfile.id;
+  const stBadge=badge(issue.status,ISTATUS_PT[issue.status]||issue.status);
+  const canEdit=isAdmin()||issue.created_by===myId;
+
+  const statusBtns=isAdmin()?`
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      ${issue.status!=='open'?`<button class="btn btn-xs btn-secondary" onclick="setIssueStatus('${id}','open')">↩ Reabrir</button>`:''}
+      ${issue.status!=='in_progress'?`<button class="btn btn-xs btn-warn" onclick="setIssueStatus('${id}','in_progress')">▶ Em curso</button>`:''}
+      ${issue.status!=='resolved'?`<button class="btn btn-xs btn-primary" onclick="setIssueStatus('${id}','resolved')">✓ Resolver</button>`:''}
+      ${canEdit?`<button class="btn btn-xs btn-danger" onclick="deleteIssue('${id}')">🗑️ Apagar</button>`:''}
+    </div>`:'';
+
+  // Cost section
+  const costSection=isAdmin()?`
+    <div style="background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:14px;margin:14px 0">
+      <div style="font-weight:700;font-size:.84rem;margin-bottom:10px">💰 Custo associado</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;flex:0 0 120px">
+          <label style="font-size:.75rem">Valor (€)</label>
+          <input type="number" id="ic-cost" value="${issue.cost||''}" min="0" step="0.01" placeholder="0.00" style="font-size:.84rem;padding:7px 10px">
+        </div>
+        <div class="form-group" style="margin:0;flex:1;min-width:160px">
+          <label style="font-size:.75rem">Descrição do custo</label>
+          <input type="text" id="ic-cost-desc" value="${esc(issue.cost_description||'')}" placeholder="Ex: Mão de obra, peças..." style="font-size:.84rem;padding:7px 10px">
+        </div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:20px" onclick="saveCost('${id}')">Guardar</button>
+      </div>
+      ${issue.cost?`<div style="margin-top:8px;font-size:.82rem;color:var(--muted)">Custo atual: <strong style="color:var(--text)">€${Number(issue.cost).toFixed(2)}</strong>${issue.cost_description?' — '+esc(issue.cost_description):''}</div>`:''}
+    </div>`:'';
+
+  const resolvedInfo=issue.resolved_at?`<div style="font-size:.78rem;color:var(--success);margin-top:4px">✓ Resolvida em ${fmtDateTime(issue.resolved_at)}</div>`:'';
+
+  const commentsHtml=(comments||[]).map(c=>{
+    const cp=c.profiles||{};
+    const isMe=c.profile_id===myId;
+    return `<div class="comment">
+      <div class="c-av${isMe?' me':''}">${initials(cp.full_name)}</div>
+      <div class="c-bubble">
+        <div class="c-header">
+          <span class="c-name">${esc(cp.full_name||'?')}</span>
+          <span class="c-time">${fmtDateTime(c.created_at)}</span>
+          ${isMe||isAdmin()?`<button class="c-del" onclick="deleteComment('${c.id}','${id}')">✕</button>`:''}
+        </div>
+        <div class="c-body">${esc(c.body)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  $i('issue-detail-content').innerHTML=`
+    <h2 style="padding-right:24px">${esc(issue.title)}</h2>
+    <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px">
+      Por ${esc(prof.full_name||'?')} · ${fmtDateTime(issue.created_at)} · ${stBadge}
+    </div>
+    ${resolvedInfo}
+    ${issue.description?`<p style="font-size:.87rem;color:var(--text);margin:10px 0 0;line-height:1.6">${esc(issue.description)}</p>`:''}
+    ${statusBtns}
+    ${costSection}
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <div style="font-weight:700;font-size:.85rem;margin-bottom:12px">Comentários (${(comments||[]).length})</div>
+    <div id="comments-list-${id}">${commentsHtml||'<div style="color:var(--muted);font-size:.84rem;margin-bottom:12px">Sem comentários ainda.</div>'}</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <textarea id="new-comment-${id}" placeholder="Adicionar comentário..." style="flex:1;min-height:60px;font-size:.84rem"></textarea>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="addComment('${id}')">Enviar</button>`;
+  openModal('issue-detail-modal');
+}
+
+async function addComment(issueId){
+  const body=($i(`new-comment-${issueId}`)?.value||'').trim();
+  if (!body){ showToast('Escreva um comentário.','info'); return; }
+  const {error}=await sb.from('issue_comments').insert({issue_id:issueId,profile_id:currentProfile.id,body});
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  $i(`new-comment-${issueId}`).value='';
+  await openIssueDetail(issueId);
+  showToast('Comentário adicionado!','success');
+}
+
+async function deleteComment(commentId,issueId){
+  if (!confirm('Apagar comentário?')) return;
+  const {error}=await sb.from('issue_comments').delete().eq('id',commentId);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  await openIssueDetail(issueId);
+}
+
+async function setIssueStatus(id,status){
+  const upd={status};
+  if (status==='resolved') upd.resolved_at=new Date().toISOString();
+  if (status!=='resolved') upd.resolved_at=null;
+  const {error}=await sb.from('issues').update(upd).eq('id',id);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  await loadIssues(); renderIssues();
+  // Refresh detail if open
+  if ($i('issue-detail-modal').classList.contains('open')) await openIssueDetail(id);
+  showToast('Estado atualizado!','success');
+}
+
+async function saveCost(id){
+  const cost=parseFloat($i('ic-cost')?.value)||null;
+  const cost_description=($i('ic-cost-desc')?.value||'').trim()||null;
+  const {error}=await sb.from('issues').update({cost,cost_description}).eq('id',id);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  await loadIssues();
+  await openIssueDetail(id);
+  showToast('Custo guardado!','success');
+}
+
+async function deleteIssue(id){
+  if (!confirm('Apagar esta ocorrência e todos os comentários?')) return;
+  showLoading('A apagar...');
+  const {error}=await sb.from('issues').delete().eq('id',id);
+  hideLoading();
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  closeModal('issue-detail-modal');
+  await loadIssues(); renderIssues();
+  showToast('Ocorrência apagada.','info');
+}
+
+// ─── PROFILE MODAL ────────────────────────
+function openProfileModal(){
+  clearAlert('profile-err'); clearAlert('profile-ok');
+  $i('p-name').value=currentProfile.full_name||'';
+  $i('p-fraction').value=currentProfile.fraction||'';
+  $i('p-email').value=currentUser.email||'';
+  $i('p-pw').value='';
+  $i('p-role-display').innerHTML=badge(currentProfile.role,ROLES_PT[currentProfile.role]||currentProfile.role);
+  openModal('profile-modal');
+}
+
+async function saveProfile(){
+  const name=$i('p-name').value.trim(), fraction=$i('p-fraction').value.trim().toUpperCase(), pw=$i('p-pw').value;
+  clearAlert('profile-err'); clearAlert('profile-ok');
+  if (!name){ showAlert('profile-err','O nome não pode estar vazio.'); return; }
+  showLoading('A guardar...');
+  const {error}=await sb.from('profiles').update({full_name:name,fraction}).eq('id',currentProfile.id);
+  if (error){ hideLoading(); showAlert('profile-err','Erro: '+error.message); return; }
+  if (pw){
+    if (pw.length<6){ hideLoading(); showAlert('profile-err','Password mínimo 6 caracteres.'); return; }
+    const {error:pe}=await sb.auth.updateUser({password:pw});
+    if (pe){ hideLoading(); showAlert('profile-err','Erro: '+pe.message); return; }
+  }
+  currentProfile.full_name=name; currentProfile.fraction=fraction;
+  hideLoading(); showAlert('profile-ok','Perfil atualizado.','success');
+  $i('hdr-user').textContent=`${name} · ${fraction||'—'}`;
+  if (presenceChannel) presenceChannel.track({name,fraction});
+}
+
+// ─── ADMIN MODAL ──────────────────────────
+async function openAdminModal(){
+  $i('users-loading').style.display='block'; $i('users-table').style.display='none';
+  openModal('admin-modal');
+  const {data}=await sb.from('profiles').select('*').eq('condominium_id',CFG_CONDO_ID).order('full_name');
+  $i('users-loading').style.display='none';
+  if (!data) return;
+  $i('users-tbody').innerHTML=data.map(u=>`<tr>
+    <td style="font-weight:600">${esc(u.full_name||'(sem nome)')}</td>
+    <td>${u.fraction||'—'}</td>
+    <td>${badge(u.role,ROLES_PT[u.role]||u.role)}</td>
+    <td>${u.id!==currentUser.id?`
+      <select onchange="changeRole('${u.id}',this.value)" style="font-size:.78rem;padding:3px 6px;border-radius:5px;border:1px solid var(--border)">
+        ${['admin','resident'].map(r=>`<option value="${r}" ${r===u.role?'selected':''}>${ROLES_PT[r]}</option>`).join('')}
+      </select>`:'<em style="font-size:.8rem;color:var(--muted)">(eu)</em>'}
+    </td></tr>`).join('');
+  $i('users-table').style.display='';
+}
+
+async function changeRole(uid,role){
+  const {error}=await sb.from('profiles').update({role}).eq('id',uid);
+  if (error){ showToast('Erro: '+error.message,'error'); return; }
+  showToast('Role atualizado.','success');
+  openAdminModal();
+}
+
+// ─── INIT ─────────────────────────────────
+let _loading=false;
+
+async function bootSession(session){
+  if (_loading) return; _loading=true;
+  showLoading('A carregar...');
+  try {
+    currentUser=session.user;
+    currentProfile=await loadProfile(currentUser.id);
+    if (!currentProfile.condominium_id){
+      await sb.from('profiles').update({condominium_id:CFG_CONDO_ID}).eq('id',currentUser.id);
+      currentProfile.condominium_id=CFG_CONDO_ID;
+    }
+    const {data:condo}=await sb.from('condominiums').select('*').eq('id',CFG_CONDO_ID).single();
+    currentCondo=condo||null;
+    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues()]);
+    hideLoading();
+    renderApp();
+  } catch(e){
+    hideLoading(); showToast('Erro: '+e.message,'error');
+    await sb.auth.signOut(); showScreen('login-screen');
+  } finally { _loading=false; }
+}
+
+async function init(){
+  sb=supabase.createClient(CFG_URL,CFG_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  const {data:{session}}=await sb.auth.getSession();
+  if (session?.user) await bootSession(session);
+  else showScreen('login-screen');
+
+  sb.auth.onAuthStateChange(async (event,session)=>{
+    if (event==='PASSWORD_RECOVERY'){ showScreen('forgot-screen'); return; }
+    if (event==='SIGNED_IN') await bootSession(session);
+    if (event==='SIGNED_OUT'){
+      currentUser=currentProfile=currentCondo=null;
+      calData={}; quotaFractions=[]; quotaPayments=[]; allIssues=[];
+      selectedDate=null; selectedSlot=null; onlineUsers={};
+      showScreen('login-screen');
+    }
+  });
+
+  setInterval(async ()=>{
+    if (!currentUser||!$i('app-screen').classList.contains('active')) return;
+    await Promise.all([loadCalendarData(), loadQuotas(), loadIssues()]);
+    renderMiniCal(); renderTopSlots();
+    if (selectedDate) renderAvailPanel(selectedDate);
+    if (selectedDate&&selectedSlot) renderSidePanel(selectedDate,selectedSlot);
+    if (currentTab==='quotas') renderQuotas();
+    if (currentTab==='issues') renderIssues();  },30000);
+}
+
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+init();
+</script>
+</body>
+</html>
